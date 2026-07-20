@@ -139,12 +139,30 @@ setTimeout(drawConstellation,600);
 const cg=document.getElementById('chargrid');
 const visual=c=>c.img?`<img class="face" src="${c.img}" alt="${c.name}">`:pixelFace(c.face);
 
-/* --- personnages ajoutés par les joueurs (stockés dans ce navigateur) --- */
+/* --- personnages des joueurs : base partagée Supabase --- */
+const SB_URL=(FV.SUPABASE_URL||'').replace(/\/rest\/v1\/?$/,'').replace(/\/$/,'');
+const SB_KEY=FV.SUPABASE_KEY||'';
+const SB_ON=!!(SB_URL&&SB_KEY);
+const sbHeaders={apikey:SB_KEY,Authorization:'Bearer '+SB_KEY,'Content-Type':'application/json'};
+function rowToChar(r){return{id:r.id,name:r.nom,rp:r.rp||'',arcs:r.arcs||[],glow:r.glow||'#3fe8d8',
+  quote:r.citation||'',desc:r.histoire||'',perso:r.personnalite||'',rel:r.relations||[],
+  fun:r.anecdotes||[],img:r.img||null,face:r.face||null};}
+async function loadShared(){
+  if(!SB_ON)return;
+  try{
+    const res=await fetch(SB_URL+'/rest/v1/personnages?statut=eq.valide&select=*&order=created_at.asc',{headers:sbHeaders});
+    if(!res.ok)throw new Error(res.status);
+    const rows=await res.json();
+    rows.forEach(r=>{if(!CHARS.some(c=>c.id===r.id))CHARS.push(rowToChar(r));});
+    renderChars();
+  }catch(e){console.warn('Base indisponible :',e);}
+}
+/* mode local de secours (si les clés Supabase sont retirées) */
 const STORE='fv_chars';
 let memStore=[];
 function loadSaved(){try{return JSON.parse(localStorage.getItem(STORE)||'[]')}catch(e){return memStore}}
 function persist(list){try{localStorage.setItem(STORE,JSON.stringify(list))}catch(e){memStore=list}}
-let SAVED=loadSaved();
+let SAVED=SB_ON?[]:loadSaved();
 CHARS.push(...SAVED);
 
 function renderChars(){
@@ -173,6 +191,7 @@ function renderChars(){
   });
 }
 renderChars();
+loadShared();
 
 /* cinématiques par arc */
 document.getElementById('cineArcs').innerHTML=ARCS.map(a=>{
@@ -436,11 +455,22 @@ document.getElementById('fSave').addEventListener('click',()=>{
     desc,perso,rel,fun:fun.length?fun:['Nouveau visage du multivers.'],
     img:fImgData||null,
     face:fImgData?null:{bg:'#0d2530',hair:glow,skin:'#e8c9a8',eye:'#0b1d20',mouth:'#a86e50'}};
-  CHARS.push(c);
-  SAVED.push(c); persist(SAVED);
-  renderChars();
-  closeOv('charForm');
-  showChar(c);
+  if(SB_ON){
+    const row={id,nom:name,arcs,rp:rpLabel(arcs),glow,citation:c.quote,histoire:c.desc,
+      personnalite:c.perso,relations:c.rel,anecdotes:c.fun,img:c.img,face:c.face,statut:'attente'};
+    const btn=document.getElementById('fSave');
+    btn.disabled=true;btn.textContent='Envoi en cours…';
+    fetch(SB_URL+'/rest/v1/personnages',{method:'POST',headers:sbHeaders,body:JSON.stringify(row)})
+      .then(r=>{if(!r.ok)throw new Error(r.status);closeOv('charForm');openOv('sentOk');})
+      .catch(()=>{err.textContent="Échec de l'envoi — vérifiez votre connexion et réessayez";})
+      .finally(()=>{btn.disabled=false;btn.textContent='Enregistrer mon personnage';});
+  }else{
+    CHARS.push(c);
+    SAVED.push(c); persist(SAVED);
+    renderChars();
+    closeOv('charForm');
+    showChar(c);
+  }
 });
 
 
