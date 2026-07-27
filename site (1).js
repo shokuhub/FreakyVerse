@@ -1,47 +1,292 @@
-/* ============================================================
-   MONDES (planètes) : présentation, chronologie, archives
-   ------------------------------------------------------------
-   - soon:true  → la page du monde affiche "Coming soon"
-   - Lien vers une archive dans un texte : [[id_archive|texte affiché]]
-   - Archive : {id:"secte", type:"Groupe", name:"La Secte",
-                desc:"<p>…</p>", imgs:[{img:"assets/archives/photo.jpg",cap:"Légende"}]}
-     (sans desc → la fiche affiche "Coming soon")
-   ============================================================ */
-window.FV = window.FV || {};
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FreakyVerse — Chaque histoire mérite son univers</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@300;400;600;800&family=Outfit:wght@200;300;400;500;600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
 
-/* Archives d'un monde — entrées : {id:"secte", type:"Faction", name:"La Secte", desc:"<p>…</p>", imgs:[{img:"url",cap:"Légende"}]}
-   Pour créer un lien vers une entrée depuis la chronologie ou la description : [[secte|la secte]] */
-window.FV.WORLDS = {
-  ft1:{accent:"#3fe8d8",eyebrow:"Arc 1 · Saison terminée",title:"FreakyTown <em>Saison 1</em>",
-    tag:"Là où tout a commencé.",
-    desc:"<p>« Abandonnez votre vie d'avant. Venez comme vous êtes et construisez le monde dont vous avez toujours rêvé. » C'était la promesse de FreakyTown. Mais une fois les portes ouvertes, rien ne s'est déroulé comme prévu.</p><p class='hrp'>HRP — C'est ici que tout a commencé. Les premiers souvenirs, les premières rencontres, les premières amitiés… FreakyTown Saison 1 est le point de départ de tout ce qui fait aujourd'hui le FreakyVerse.</p>",
-    tl:[["Chapitre I — Un nouveau départ","Les habitants arrivent sur une terre encore vierge, avec une seule promesse : recommencer leur vie. Les premières maisons sortent de terre, les premiers commerces ouvrent leurs portes et, surtout, les premiers liens se tissent."],
-        ["Chapitre II — Les premiers mystères","Alors que FreakyTown semble enfin trouver son équilibre, les premiers événements inquiétants surviennent. Une élection municipale divise les habitants, plusieurs villageois disparaissent avant d'être retrouvés morts dans des circonstances troublantes, et une mystérieuse cachette appartenant à Shoku, le fondateur de FreakyTown, est découverte sous le village. Peu à peu, les habitants réalisent que leur nouveau départ cache une vérité bien plus sombre."],
-        ["Chapitre III — La Tempête","Une immense tempête frappe FreakyTown sans que personne n'en comprenne l'origine. En quelques instants, le village est ravagé et une grande partie de ses habitants perd la vie. Les survivants n'ont d'autre choix que de quitter les ruines de leur foyer."]],
-    chars:["Shoku"], codex:[], gal:[]},
-  ft2:{accent:"#5aa7ff",eyebrow:"Arc 2 · Saison terminée",title:"FreakyTown <em>Saison 2</em>",
-    tag:"Le projet parfait.",
-    desc:"Après l'échec de sa première expérience, Shoku rassemble de nouveaux habitants et donne une seconde vie à FreakyTown. Sans le savoir, chacun d'eux partage un lien qui les unit, un mystère qui ne sera révélé que bien plus tard. Cette fois, rien n'est laissé au hasard. Derrière l'apparente tranquillité du village, chaque événement semble suivre un plan soigneusement orchestré. Entre révélations, dangers et aventures, cette nouvelle expérience pousse ses habitants dans leurs derniers retranchements.",
-    tl:[["Chapitre I — Un nouveau départ","Après la destruction de FreakyTown, une nouvelle expérience voit le jour. De nouveaux habitants sont invités à tout quitter pour repartir de zéro sur une terre isolée, entourée de montagnes. Les premières maisons sortent de terre, les commerces ouvrent leurs portes et chacun commence à tisser de nouveaux liens, persuadé d'avoir enfin trouvé un endroit où reconstruire sa vie."],
-        ["Chapitre II — Les Monolithes","D'étranges monolithes sont découverts aux quatre coins de la région. Intrigués, les habitants décident d'enquêter et finissent par comprendre qu'ils forment un cercle parfait dont le centre se trouve sous FreakyTown. En explorant les profondeurs du village, ils découvrent un passage secret menant à une immense caverne, bien plus ancienne que le village lui-même. Au cœur de celle-ci, une mystérieuse [[secte|secte]] est en plein rituel pour ramener une puissante entité à la vie. L'arrivée des habitants perturbe la cérémonie : le rituel échoue… et réveille à la place Pepe, un ancien habitant de FreakyTown disparu lors de la première saison."],
-        ["Chapitre III — Les fils du destin","Alors que le quotidien semble reprendre son cours, chaque habitant se retrouve confronté à une histoire qui lui est propre. Certains croisent la route d'une mafia et se retrouvent impliqués dans une vente aux enchères clandestine. D'autres enquêtent sur une immense barrière mystérieuse, recherchent un temple oublié ou tentent d'échapper à une inquiétante entité démoniaque. Peu à peu, une évidence s'impose : personne n'est arrivé à FreakyTown par hasard. Chaque aventure semble intimement liée au passé de ceux qui la vivent.<br><br><em>Ces récits constituent le cœur de la Saison 2. Pour les découvrir en détail, explorez les <button class='lore' data-goto-chars>fiches des différents personnages</button>.</em>"],
-        ["Chapitre IV — Les vestiges du passé","Guidés par Loyga, les habitants se lancent à la recherche du [[namrum|Temple de Namrum]]. Après avoir traversé ses nombreuses énigmes et déjoué ses pièges, ils découvrent le village souterrain des [[octomains|Octomains]], une ancienne civilisation oubliée. <em>(Pour en apprendre davantage sur leur histoire, consultez les Archives.)</em><br><br>Quelque temps plus tard, une nouvelle découverte bouleverse leurs recherches. Le Temple de Namrum dissimule également un portail menant vers le Nether. En le franchissant, les habitants découvrent un royaume habité par des humains venus du passé. Prisonniers de cette dimension depuis vingt-cinq ans, ils sont en réalité les membres du premier bataillon d'exploration à s'être aventuré dans le Nether. <em>(Voir les Archives : [[bataillon|Bataillon d'exploration — An 1025]].)</em><br><br>La reine de ce royaume leur confie alors une mission. Plus loin dans le Nether se cache une seconde génération d'humains, venue du futur et condamnée au même destin. Un ancien pacte empêche cependant les deux peuples d'entrer en contact. Les habitants de FreakyTown acceptent de leur venir en aide et quittent temporairement le Nether afin de préparer cette dangereuse expédition."],
-        ["Chapitre V — Shoku's Games","Guidés par une mystérieuse fée, les habitants sont soudainement téléportés dans les ruines du tout premier FreakyTown, abandonné depuis la catastrophe de la Saison 1. En explorant ce village ravagé, ils découvrent une trappe dissimulée menant à un ancien refuge ayant appartenu à Shoku.<br><br>Au bout d'un long couloir se dressent plusieurs portes, chacune marquée du visage d'un habitant. Certaines sont condamnées, barrées d'une croix, tandis que d'autres peuvent encore être ouvertes. Derrière chaque porte se trouve une pièce contenant un livre. En le lisant, chacun découvre le récit de sa propre histoire : son passé, les événements qu'il a traversés… mais aussi le destin qui lui était réservé.<br><br>Une terrible vérité éclate alors au grand jour : rien de ce qu'ils ont vécu n'était le fruit du hasard. Depuis leur arrivée à FreakyTown, chaque rencontre, chaque épreuve et chaque révélation faisaient partie d'un plan imaginé par Shoku.<br><br>Alors que le silence s'installe, une voix résonne dans le couloir. C'est celle de Shoku. Il ordonne aux habitants d'avancer jusqu'à une porte qui vient lentement de s'ouvrir au bout du couloir. Sans vraiment avoir le choix, ils s'y engouffrent et découvrent une immense salle. Un enregistrement de Shoku leur révèle alors la raison de leur présence : pour avoir découvert ce qui n'aurait jamais dû être révélé, ils sont condamnés à participer aux Shoku's Games, une série d'épreuves mortelles dont tous ne sortiront pas vivants. À l'issue des jeux, trois habitants perdent la vie.<br><br>De retour à FreakyTown, le silence remplace les questions. Les survivants n'ont plus qu'une seule chose à faire : rendre un dernier hommage à ceux qui ne reviendront jamais."],
-        ["Chapitre VI — L'expédition","Après plusieurs jours de préparation, les habitants retournent dans le Nether afin d'accomplir la mission confiée par la reine. Leur objectif : retrouver le camp de la génération venue du futur.<br><br>Au terme de leur expédition, ils découvrent un immense manoir aux allures étonnamment modernes, plongé dans un silence inquiétant. Les lieux semblent abandonnés… jusqu'à ce que d'étranges créatures aveugles apparaissent. Incapables de voir, elles réagissent au moindre bruit. Les habitants sont alors contraints de progresser dans le manoir en silence, au risque d'être immédiatement attaqués.<br><br>Au fil de leurs recherches, ils découvrent plusieurs enregistrements audio laissés par un homme nommé Zanark. Dans l'un d'eux, il raconte que, privés de tout espoir de regagner leur époque, les membres du bataillon ont choisi de mettre fin à leurs jours. Désormais seul, Zanark continue pourtant de croire qu'il existe un moyen de rentrer chez lui… même si la solitude semble peu à peu le faire sombrer dans la folie.<br><br>En atteignant le sous-sol du manoir, les habitants font finalement sa rencontre. Entouré des créatures qui semblent lui obéir, Zanark se sert d'eux pour rejoindre le royaume du bataillon venu du passé et s'emparer du portail menant vers l'Overworld. Son plan réussit. Il parvient à quitter le Nether aux côtés des habitants de FreakyTown, mais son évasion coûte la vie à deux d'entre eux.<br><br>Ainsi débute l'histoire de Zanark à FreakyTown. Dangereux, certes — mais surtout responsable de la mort de deux d'entre eux. Il est immédiatement arrêté et placé sous la surveillance de la police du village."],
-        ["Chapitre VII — Le CEEO","Dès leur arrivée à FreakyTown, les habitants découvrent une immense barrière s'étendant à perte de vue, à quelques kilomètres seulement du village. Pendant des semaines, chacun se demande ce qu'elle renferme. Lorsqu'ils parviennent enfin à la franchir, ils découvrent un immense domaine : une grande école entourée d'un vaste parc et d'une forêt.<br><br>En explorant les lieux, d'étranges flashbacks assaillent les habitants. Des souvenirs qu'ils ne reconnaissent pas, des voix, des visages et des émotions semblent refaire surface sans qu'ils en comprennent l'origine.<br><br>C'est finalement dans le bureau du directeur qu'ils découvrent la vérité. Tous les habitants de FreakyTown ont grandi dans cet établissement : le [[ceeo|CEEO]], le Centre d'Éducation pour Enfants Orphelins. Derrière l'image d'un simple orphelinat se cachait en réalité un programme secret destiné à façonner des enfants pour un objectif bien plus vaste. Leurs souvenirs avaient été effacés avant leur arrivée à FreakyTown, remplacés par une vie entièrement fictive afin qu'ils ignorent leur véritable passé. Le CEEO n'a pourtant jamais été créé par Shoku. Ce dernier a simplement conclu un marché avec son directeur, qui lui livrait les enfants une fois son projet arrivé à son terme. <em>(Pour découvrir toute l'histoire du CEEO, consultez les Archives.)</em><br><br>Encore sous le choc de cette révélation, une voix retentit dans tout le domaine. C'est celle de Shoku. Il les félicite d'être enfin parvenus jusqu'à la vérité, avant de leur annoncer que désormais, puisqu'ils savent tout, leur existence n'a plus aucune utilité. Il leur révèle alors qu'ils portent tous, depuis leur arrivée à FreakyTown, une puce implantée près du cœur. Son existence leur était déjà connue grâce aux recherches d'un scientifique, mais Shoku leur annonce que, dans vingt-quatre heures, ces puces exploseront, mettant fin à leur histoire."],
-        ["Chapitre Final — La fin d'un monde","Vingt-quatre heures. Voilà le temps qu'il reste aux habitants avant que les puces implantées dans leur cœur n'explosent. Alors que tout semble perdu, c'est pourtant Zanark, désormais prisonnier de FreakyTown, qui leur offre une ultime lueur d'espoir.<br><br>Il leur révèle l'existence d'un portail capable de traverser le temps. En rejoignant une autre époque, les puces deviendraient inutilisables, leur permettant ainsi d'échapper au plan de Shoku. Une seule destination s'impose alors : le portail de l'End.<br><br>Les habitants se lancent dans une ultime course contre la montre. Après avoir réuni les Yeux de l'Ender, ils localisent enfin le portail. Comme si tout avait toujours été écrit d'avance, celui-ci se trouve sous les fondations mêmes du [[ceeo|CEEO]], là où leur histoire avait réellement commencé.<br><br>En laissant derrière eux leur village, leurs souvenirs et ceux qui ont perdu la vie au cours de cette aventure, les habitants franchissent une dernière fois un portail. Ils abandonnent leur époque pour un avenir inconnu, avec l'espoir d'écrire enfin leur propre destin.<br><br>La suite appartient à l'Histoire.<br><br><em>À suivre… (Voir la cinématique FreakyTown Saison 2 END.)</em>"]],
-    chars:["Shoku"], codex:[
-      {id:"secte", type:"Groupe", name:"La Secte"},
-      {id:"namrum", type:"Lieu", name:"Le Temple de Namrum"},
-      {id:"octomains", type:"Civilisation", name:"Les Octomains"},
-      {id:"bataillon", type:"Histoire", name:"Bataillon d'exploration — An 1025"},
-      {id:"ceeo", type:"Organisation", name:"Le CEEO"},
-    ], gal:[]},
-  circus:{accent:"#ff6b6b",soon:true,eyebrow:"Arc 3 · Hors du temps",title:"The Freaky <em>Digital Circus</em>",
-    tag:"La sortie n'existe pas.",
-    desc:"Un chapiteau numérique entre les mondes. On y entre par accident, on y reste par oubli. Les numéros s'enchaînent, le public applaudit — mais personne n'a jamais vu le public.",
-    tl:[["Ouverture","Le chapiteau apparaît une nuit sans lune, déjà usé, déjà ancien."],
-        ["Les numéros","Chaque représentation rejoue un souvenir volé à FreakyTown."],
-        ["La règle unique","Ne demandez jamais où est la sortie. La Maîtresse de piste sourit toujours quand on le fait."]],
-    chars:[], codex:[], gal:[]},
-};
+<link rel="stylesheet" href="css/site.css">
+</head>
+<body>
+
+<canvas id="sky"></canvas>
+<div class="fog f1"></div><div class="fog f2"></div><div class="fog f3"></div>
+
+<!-- INTRO -->
+<div id="intro">
+  <img id="introLogo" src="assets/logo-freakyverse.webp" alt="FreakyVerse">
+</div>
+
+<!-- NAV -->
+<nav id="nav">
+  <a href="#hero"><img id="navLogo" src="assets/logo-freakyverse.webp" alt="FreakyVerse"></a>
+  <button id="burger" aria-label="Menu">☰</button>
+  <ul class="navlinks" id="navlinks">
+    <li><a href="#hero">Accueil</a></li>
+    <li><a href="#univers">Univers</a></li>
+    <li><a href="#personnages">Personnages</a></li>
+    <li><a href="#cinematiques">Cinématiques</a></li>
+    <li><a href="#galerie">Galerie</a></li>
+    <li><a href="#communaute">Communauté</a></li>
+    <li><a href="#apropos">À propos</a></li>
+    <li><a href="#communaute" class="cta">Discord</a></li>
+  </ul>
+</nav>
+
+<main>
+<!-- HERO -->
+<section id="hero">
+  <div id="heroScene">
+    <div class="glowcore"></div>
+    <div class="crystal c1"><svg viewBox="0 0 40 84" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="cg1" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#bfeaff" stop-opacity=".95"/><stop offset=".45" stop-color="#4aa8e8" stop-opacity=".75"/><stop offset="1" stop-color="#123a6e" stop-opacity=".85"/></linearGradient></defs><polygon points="20,0 36,28 20,84 4,28" fill="url(#cg1)" stroke="rgba(210,240,255,.5)" stroke-width="1"/><polyline points="4,28 20,38 36,28" fill="none" stroke="rgba(230,250,255,.45)" stroke-width="1"/><line x1="20" y1="0" x2="20" y2="38" stroke="rgba(230,250,255,.3)" stroke-width="1"/></svg></div>
+    <div class="crystal c2"><svg viewBox="0 0 40 84" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="cg1" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#bfeaff" stop-opacity=".95"/><stop offset=".45" stop-color="#4aa8e8" stop-opacity=".75"/><stop offset="1" stop-color="#123a6e" stop-opacity=".85"/></linearGradient></defs><polygon points="20,0 36,28 20,84 4,28" fill="url(#cg1)" stroke="rgba(210,240,255,.5)" stroke-width="1"/><polyline points="4,28 20,38 36,28" fill="none" stroke="rgba(230,250,255,.45)" stroke-width="1"/><line x1="20" y1="0" x2="20" y2="38" stroke="rgba(230,250,255,.3)" stroke-width="1"/></svg></div>
+    <div class="crystal c3"><svg viewBox="0 0 40 84" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="cg1" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#bfeaff" stop-opacity=".95"/><stop offset=".45" stop-color="#4aa8e8" stop-opacity=".75"/><stop offset="1" stop-color="#123a6e" stop-opacity=".85"/></linearGradient></defs><polygon points="20,0 36,28 20,84 4,28" fill="url(#cg1)" stroke="rgba(210,240,255,.5)" stroke-width="1"/><polyline points="4,28 20,38 36,28" fill="none" stroke="rgba(230,250,255,.45)" stroke-width="1"/><line x1="20" y1="0" x2="20" y2="38" stroke="rgba(230,250,255,.3)" stroke-width="1"/></svg></div>
+    <div class="crystal c4"><svg viewBox="0 0 40 84" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="cg1" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#bfeaff" stop-opacity=".95"/><stop offset=".45" stop-color="#4aa8e8" stop-opacity=".75"/><stop offset="1" stop-color="#123a6e" stop-opacity=".85"/></linearGradient></defs><polygon points="20,0 36,28 20,84 4,28" fill="url(#cg1)" stroke="rgba(210,240,255,.5)" stroke-width="1"/><polyline points="4,28 20,38 36,28" fill="none" stroke="rgba(230,250,255,.45)" stroke-width="1"/><line x1="20" y1="0" x2="20" y2="38" stroke="rgba(230,250,255,.3)" stroke-width="1"/></svg></div>
+    <div class="crystal c5"><svg viewBox="0 0 40 84" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="cg1" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#bfeaff" stop-opacity=".95"/><stop offset=".45" stop-color="#4aa8e8" stop-opacity=".75"/><stop offset="1" stop-color="#123a6e" stop-opacity=".85"/></linearGradient></defs><polygon points="20,0 36,28 20,84 4,28" fill="url(#cg1)" stroke="rgba(210,240,255,.5)" stroke-width="1"/><polyline points="4,28 20,38 36,28" fill="none" stroke="rgba(230,250,255,.45)" stroke-width="1"/><line x1="20" y1="0" x2="20" y2="38" stroke="rgba(230,250,255,.3)" stroke-width="1"/></svg></div>
+    <div class="spark s1"><svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg"><path d="M20 0 Q22.5 15 40 20 Q22.5 25 20 40 Q17.5 25 0 20 Q17.5 15 20 0 Z" fill="currentColor"/></svg></div>
+    <div class="spark s2"><svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg"><path d="M20 0 Q22.5 15 40 20 Q22.5 25 20 40 Q17.5 25 0 20 Q17.5 15 20 0 Z" fill="currentColor"/></svg></div>
+    <div class="spark s3"><svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg"><path d="M20 0 Q22.5 15 40 20 Q22.5 25 20 40 Q17.5 25 0 20 Q17.5 15 20 0 Z" fill="currentColor"/></svg></div>
+    <div class="spark s4"><svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg"><path d="M20 0 Q22.5 15 40 20 Q22.5 25 20 40 Q17.5 25 0 20 Q17.5 15 20 0 Z" fill="currentColor"/></svg></div>
+    <div class="spark s5"><svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg"><path d="M20 0 Q22.5 15 40 20 Q22.5 25 20 40 Q17.5 25 0 20 Q17.5 15 20 0 Z" fill="currentColor"/></svg></div>
+  </div>
+  <div class="eyebrow" style="opacity:0" id="heroEyebrow">Univers RP Minecraft — Multivers narratif</div>
+  <h1 id="heroTitle">Il était une fois… <em>FreakyVerse.</em></h1>
+  <p class="hero-sub" id="heroSub">FreakyVerse n'est pas qu'un serveur RP. C'est un multivers façonné par ses joueurs. Des saisons entières de récits, de cinématiques et de personnages qui continuent d'exister bien après la fin du générique.</p>
+  <div class="hero-row" id="heroRow">
+    <a class="btn solid" href="#univers">Explorer le multivers</a>
+    <a class="btn ghost" href="#cinematiques">Voir les cinématiques</a>
+  </div>
+  <div id="scrollcue">Défiler</div>
+
+  <div class="homecards">
+    <a class="hcard rv" href="#univers"><span class="ic">✦</span><h3>Les Univers RP</h3><p>Chaque histoire est unique. Ensemble, elles forment le FreakyVerse.</p></a>
+    <a class="hcard rv d1" href="#personnages"><span class="ic">◆</span><h3>Personnages</h3><p>Les héros, traîtres et légendes nés des joueurs eux-mêmes.</p></a>
+    <a class="hcard rv d2" href="#cinematiques"><span class="ic">▶</span><h3>Cinématiques</h3><p>Des mises en scène dignes d'une série, tournées dans Minecraft.</p></a>
+    <a class="hcard rv d3" href="#galerie"><span class="ic">✧</span><h3>Créations</h3><p>Les plus belles créations de la communauté.</p></a>
+  </div>
+</section>
+
+<!-- UNIVERS : carte céleste -->
+<section id="univers">
+  <div class="eyebrow rv">Carte céleste</div>
+  <h2 class="rv d1">Le multivers <em style="font-style:normal;color:var(--glow)">FreakyVerse</em></h2>
+  <p class="lead rv d2">Chaque univers est une nouvelle aventure. Survolez-le pour réveiller ses habitants, entrez pour découvrir son histoire.</p>
+
+  <div id="cosmos">
+    <svg id="constellation"></svg>
+
+    <div class="world rv" style="--wglow:#3fe8d8;left:6%;top:10%" data-world="ft1">
+      <div class="orbwrap">
+        <div class="peek"></div>
+        <div class="orb" style="background:radial-gradient(circle at 32% 30%,#7ff3e6,#0f7d72 55%,#04302e 90%);box-shadow:0 0 40px rgba(63,232,216,.35)"></div>
+        <div class="ring"></div>
+      </div>
+      <div class="wname">FreakyTown — Saison 1</div>
+      <div class="wtag">Arc 1 · Là où tout a commencé</div>
+      <p class="winfo">Une ville tranquille en apparence. Des secrets enfouis sous chaque bâtiment, et une communauté qui ne se doutait de rien.</p>
+      <div class="wenter">Entrer dans ce monde →</div>
+    </div>
+
+    <div class="world rv d1" style="--wglow:#5aa7ff;left:41%;top:38%" data-world="ft2">
+      <div class="orbwrap">
+        <div class="peek"></div>
+        <div class="orb" style="background:radial-gradient(circle at 34% 28%,#a8ccff,#2a5db0 52%,#081a3a 92%);box-shadow:0 0 40px rgba(90,167,255,.3)"></div>
+        <div class="ring"></div>
+      </div>
+      <div class="wname">FreakyTown — Saison 2</div>
+      <div class="wtag">Arc 2 · Le projet parfait</div>
+      <p class="winfo">Le premier projet n'était qu'un brouillon. Cette fois, son créateur est bien décidé à ne plus reproduire les mêmes erreurs. Tout est prêt. Le spectacle peut commencer.</p>
+      <div class="wenter">Entrer dans ce monde →</div>
+    </div>
+
+    <div class="world rv d2" style="--wglow:#ff6b6b;right:6%;top:4%" data-world="circus">
+      <div class="orbwrap">
+        <div class="peek"></div>
+        <div class="orb" style="background:radial-gradient(circle at 30% 32%,#ffc9b8,#d04038 55%,#3a0a0a 92%);box-shadow:0 0 40px rgba(255,107,107,.3)"></div>
+        <div class="ring"></div>
+      </div>
+      <div class="wname">The Freaky Digital Circus</div>
+      <div class="wtag">Arc 3 · La sortie n'existe pas</div>
+      <p class="winfo">Un chapiteau numérique dont personne ne connaît les règles. Ceux qui y entrent oublient pourquoi ils voulaient partir.</p>
+      <div class="wenter">Entrer dans ce monde →</div>
+    </div>
+
+    <div class="world mystery rv d3" style="--wglow:#9ecfd2;right:26%;top:60%">
+      <div class="orbwrap">
+        <div class="orb"><span class="qm">?</span><span class="qm">?</span><span class="qm">?</span></div>
+        <div class="ring"></div>
+      </div>
+      <div class="wname">???</div>
+      <div class="wtag">Arc ? · La suite s'écrit</div>
+      <p class="winfo">Quelque chose se prépare aux confins du FreakyVerse. Nul ne sait encore quand ses portes s'ouvriront — ni sur quoi.</p>
+      <div class="wenter">Bientôt…</div>
+    </div>
+  </div>
+</section>
+
+<!-- PERSONNAGES -->
+<section id="personnages">
+  <div class="eyebrow rv">Personnages du multivers</div>
+  <h2 class="rv d1">Les visages du FreakyVerse.</h2>
+  <p class="lead rv d2">Chaque personnage est né d'un joueur. Cliquez dessus pour les découvrir.</p>
+  <div id="chargrid" class="rv d2"></div>
+</section>
+
+<!-- CINEMATIQUES -->
+<section id="cinematiques">
+  <div class="eyebrow rv">Salle de projection</div>
+  <h2 class="rv d1">Les cinématiques</h2>
+  <p class="lead rv d2">Bandes-annonces, backgrounds de personnages, finals de saison et grandes révélations : découvrez les créations qui donnent vie au FreakyVerse.</p>
+  <div id="cineArcs" class="rv d2"></div>
+</section>
+
+<!-- GALERIE -->
+<section id="galerie">
+  <div class="eyebrow rv">Archives visuelles</div>
+  <h2 class="rv d1">La galerie</h2>
+  <p class="lead rv d2">Les créations de la communauté, réunies en un seul endroit.</p>
+  <div id="galArcs" class="rv d2"></div>
+</section>
+
+<!-- COMMUNAUTE -->
+<section id="communaute">
+  <div class="eyebrow rv">Le cœur du réacteur</div>
+  <h2 class="rv d1">Rejoindre la communauté</h2>
+  <p class="lead rv d2">Tout se passe sur Discord — c'est là que le multivers s'écrit. Et pour ne rien rater ailleurs, on est aussi sur TikTok.</p>
+  <div id="comgrid">
+    <a class="com main rv" href="https://discord.gg/6AKW9Vjma" target="_blank" rel="noopener"><span class="mainlabel">Plateforme principale</span><span class="go">↗</span><span class="cic">💬</span><h3>Discord</h3><p>Le QG du multivers. Saisons, candidatures RP, coulisses et théories nocturnes — tout commence et tout se joue ici. Et en dehors du RP, une communauté incroyablement active vous attend : soirées jeux, événements et bonne ambiance toute l'année.</p></a>
+    <a class="com rv d1" href="https://www.tiktok.com/@freakytv" target="_blank" rel="noopener"><span class="go">↗</span><span class="cic">🎵</span><h3>TikTok</h3><p>Les moments cultes, les bêtisiers et les teasers en format court.</p></a>
+    <div class="com soon rv d2"><span class="cic">✦</span><h3>D'autres portes s'ouvriront…</h3><p>Le multivers s'agrandit. De nouveaux réseaux apparaîtront peut-être ici un jour — restez à l'affût sur le Discord.</p></div>
+  </div>
+</section>
+
+<!-- A PROPOS -->
+<section id="apropos">
+  <div class="wrap">
+    <div>
+      <div class="eyebrow rv">À propos</div>
+      <h2 class="rv d1">Un multivers, pas un serveur</h2>
+      <p class="lead rv d2">FreakyVerse est un projet de roleplay Minecraft narratif : chaque saison est écrite, jouée puis mise en scène par sa communauté. Les joueurs créent leurs personnages, tissent leurs relations, et les administrateurs orchestrent les événements qui font basculer l'histoire.</p>
+      <p class="lead rv d2" style="margin-top:1.2rem">Tout se passe sur Discord : c'est là que les saisons se préparent, que les candidatures s'ouvrent et que les personnages prennent vie. Le site est la vitrine du multivers — le Discord en est le cœur.</p>
+      <div class="hero-row rv d3" style="opacity:1;margin-top:2rem"><a class="btn solid" href="https://discord.gg/6AKW9Vjma" target="_blank" rel="noopener">Rejoindre le Discord</a></div>
+    </div>
+    <img id="foxart" class="rv d2" src="assets/embleme-renard.webp" alt="Emblème FreakyVerse">
+  </div>
+</section>
+</main>
+
+<footer>
+  <img src="assets/logo-freakyverse.webp" alt="FreakyVerse">
+  <span>FreakyVerse © 2026 — Écrit par sa communauté</span>
+  <span>Chaque histoire mérite son univers.</span>
+</footer>
+
+<!-- OVERLAY MONDE -->
+<div class="overlay" id="worldOverlay">
+  <button class="ovclose" data-close="worldOverlay">✕</button>
+  <div class="ovpanel" id="worldPanel"></div>
+</div>
+
+<!-- OVERLAY PERSONNAGE -->
+<div class="overlay" id="charSheet">
+  <button class="ovclose" data-close="charSheet">✕</button>
+  <div class="ovpanel" id="charPanel"></div>
+</div>
+
+<!-- PORTE MOT DE PASSE -->
+<div class="overlay" id="pwGate">
+  <button class="ovclose" data-close="pwGate">✕</button>
+  <div class="ovpanel"><div class="pwbox" id="pwBox">
+    <h3>Zone réservée aux joueurs</h3>
+    <p>Entrez le mot de passe du FreakyVerse pour créer votre personnage. Il est disponible sur le Discord.</p>
+    <input type="password" id="pwInput" placeholder="Mot de passe…" autocomplete="off">
+    <div class="pwerr" id="pwErr"></div>
+    <button class="btn solid" id="pwOk" style="margin-top:.6rem;width:100%">Entrer</button>
+  </div></div>
+</div>
+
+<!-- FORMULAIRE PERSONNAGE -->
+<div class="overlay" id="charForm">
+  <button class="ovclose" data-close="charForm">✕</button>
+  <div class="ovpanel">
+    <div class="eyebrow">Nouveau personnage</div>
+    <h2>Rejoindre le <em style="font-style:normal;color:var(--glow)">multivers</em></h2>
+    <p class="lead" style="margin-bottom:2.6rem">Remplissez la fiche de votre personnage. Une fois enregistré, il apparaîtra dans la galerie et sera automatiquement lié à son univers.</p>
+
+    <div class="field"><label>Nom du personnage *</label><input id="fName" placeholder="ex : Shoku"></div>
+
+    <div class="field"><label>Univers RP *</label>
+      <div class="arcpick" id="fArcs">
+        <label><input type="checkbox" value="ft1"><span>FreakyTown S1</span></label>
+        <label><input type="checkbox" value="ft2"><span>FreakyTown S2</span></label>
+        <label><input type="checkbox" value="circus"><span>Digital Circus</span></label>
+      </div>
+      <div class="hint">Sélectionnez tous les univers où votre personnage apparaît.</div>
+    </div>
+
+    <div class="field"><label>Citation</label><input id="fQuote" placeholder="Sa phrase fétiche…"></div>
+
+    <div class="field"><label>Histoire</label><textarea id="fDesc" placeholder="Le passé de votre personnage…&#10;&#10;Sautez une ligne pour créer des paragraphes."></textarea></div>
+
+    <div class="field"><label>Personnalité</label><textarea id="fPerso" style="min-height:80px" placeholder="Son caractère, sa façon d'être…"></textarea></div>
+
+    <div class="field"><label>Relations</label>
+      <div id="fRels"></div>
+      <button class="addbtn" id="fAddRel" type="button">+ Ajouter une relation</button>
+      <div class="hint">Si la relation concerne un personnage déjà sur le site, sélectionnez-le : un lien vers sa fiche sera créé.</div>
+    </div>
+
+    <div class="field"><label>Anecdotes</label><textarea id="fFun" style="min-height:80px" placeholder="Une anecdote par ligne…"></textarea></div>
+
+    <div class="field"><label>Image du personnage</label>
+      <input type="file" id="fImg" accept="image/*">
+      <img class="imgprev" id="fImgPrev" alt="">
+      <div class="hint">De préférence un PNG avec fond transparent. Sans image, un avatar pixel sera généré.</div>
+    </div>
+
+    <div class="field"><label>Couleur d'aura</label><input type="color" id="fColor" value="#3fe8d8" style="height:52px;padding:.3rem;cursor:pointer"></div>
+
+    <div class="formfoot">
+      <button class="btn solid" id="fSave">Enregistrer mon personnage</button>
+      <div class="pwerr" id="fErr" style="align-self:center"></div>
+    </div>
+  </div>
+</div>
+
+<!-- FICHE CODEX -->
+<div class="overlay" id="codexSheet">
+  <button class="ovclose" data-close="codexSheet">✕</button>
+  <div class="ovpanel" id="codexPanel"></div>
+</div>
+
+<!-- CONFIRMATION D'ENVOI -->
+<div class="overlay" id="sentOk">
+  <button class="ovclose" data-close="sentOk">✕</button>
+  <div class="ovpanel"><div class="pwbox">
+    <h3>Personnage envoyé ✦</h3>
+    <p>Votre fiche a bien été transmise. Après validation par un administrateur, votre personnage apparaîtra dans la galerie du multivers — pour tout le monde.</p>
+    <button class="btn solid" data-close="sentOk" style="width:100%" onclick="closeOv('sentOk')">Compris</button>
+  </div></div>
+</div>
+
+<!-- LIGHTBOX -->
+<div class="overlay" id="lightbox">
+  <button class="ovclose" data-close="lightbox">✕</button>
+  <div class="ovpanel"><figure><img id="lbimg" src="" alt=""><figcaption id="lbcap"></figcaption></figure></div>
+</div>
+
+<button id="sndBtn" aria-label="Activer le son"><span class="bars"><i></i><i></i><i></i></span></button>
+<div id="sndTip">Activer l'ambiance sonore</div>
+
+<script src="js/data/site.js"></script>
+<script src="js/data/arcs.js"></script>
+<script src="js/data/personnages.js"></script>
+<script src="js/data/mondes.js"></script>
+<script src="js/site.js"></script>
+</body>
+</html>
