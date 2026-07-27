@@ -207,15 +207,45 @@ document.getElementById('cineArcs').innerHTML=ARCS.map(a=>{
   return `<div class="archead" style="--arc:${a.color}"><span class="dot"></span>${a.name}</div>${body}`;
 }).join('');
 
-/* galerie par arc */
+/* légende d'une image de galerie : {titre, artiste} (nouveau) ou {cap} (ancien format) */
+function capOf(g){
+  if(g.titre||g.artiste) return {title:g.titre||'Sans titre',sub:g.artiste?`par ${g.artiste}`:''};
+  return {title:g.cap||'',sub:''};
+}
+
+/* galerie par arc : accordéon — un clic sur un arc déplie ses images */
 document.getElementById('galArcs').innerHTML=ARCS.map(a=>{
   const items=GALLERY[a.id]||[];
   const body=items.length
-    ? `<div class="masonry">${items.map(g=>`
-        <figure class="tile" data-cap="${g.cap}" data-img="${g.img}"><img src="${g.img}" alt="${g.cap}" loading="lazy"></figure>`).join('')}</div>`
+    ? `<div class="masonry">${items.map(g=>{const c=capOf(g);return `
+        <figure class="tile" data-title="${c.title}" data-sub="${c.sub}" data-img="${g.img}"><img src="${g.img}" alt="${c.title}" loading="lazy"></figure>`;}).join('')}</div>`
     : `<div class="empty"><b>Galerie en préparation</b>Les fan arts et concept arts de cet arc arriveront bientôt.</div>`;
-  return `<div class="archead" style="--arc:${a.color}"><span class="dot"></span>${a.name}</div>${body}`;
+  const count = items.length ? `${items.length} image${items.length>1?'s':''}` : 'à venir';
+  return `<button class="archead" style="--arc:${a.color}" data-arc="${a.id}">
+      <span class="dot"></span><span class="arcname">${a.name}</span>
+      <span class="arccount">${count}</span><span class="archev">⌄</span>
+    </button>
+    <div class="arcpanel" id="galPanel-${a.id}">${body}</div>`;
 }).join('');
+
+/* accordéon : un seul arc ouvert à la fois, avec animation de hauteur */
+document.querySelectorAll('#galArcs .archead').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    const panel=document.getElementById('galPanel-'+btn.dataset.arc);
+    const isOpen=btn.classList.contains('open');
+    document.querySelectorAll('#galArcs .archead.open').forEach(b=>{
+      b.classList.remove('open');
+      document.getElementById('galPanel-'+b.dataset.arc).style.maxHeight='0px';
+    });
+    if(!isOpen){
+      btn.classList.add('open');
+      panel.style.maxHeight=panel.scrollHeight+'px';
+      panel.querySelectorAll('img').forEach(img=>{
+        if(!img.complete)img.addEventListener('load',()=>{ if(btn.classList.contains('open'))panel.style.maxHeight=panel.scrollHeight+'px'; },{once:true});
+      });
+    }
+  });
+});
 
 /* ================= OVERLAYS ================= */
 function openOv(id){document.getElementById(id).classList.add('open');document.body.style.overflow='hidden';if(typeof SND!=='undefined'&&SND.on)SND.open()}
@@ -232,7 +262,7 @@ function showCodex(entry){
     <div class="eyebrow">${entry.type||'Archive'}</div>
     <h2>${entry.name}</h2>
     ${entry.desc?`<div class="lead" style="margin-top:1.2rem">${entry.desc}</div>`:`<div class="empty" style="margin-top:2.4rem"><b>Coming soon</b>Cette archive sera déclassifiée prochainement…</div>`}
-    ${entry.imgs&&entry.imgs.length?`<div class="ovsec"><h4>Visuels</h4><div class="ovgal">${entry.imgs.map(x=>`<img src="${x.img||x}" data-img="${x.img||x}" data-cap="${x.cap||entry.name}" alt="">`).join('')}</div></div>`:''}`;
+    ${entry.imgs&&entry.imgs.length?`<div class="ovsec"><h4>Visuels</h4><div class="ovgal">${entry.imgs.map(x=>{const c=capOf(typeof x==='string'?{img:x}:x);return `<img src="${x.img||x}" data-img="${x.img||x}" data-title="${c.title||entry.name}" data-sub="${c.sub}" alt="">`;}).join('')}</div></div>`:''}`;
   openOv('codexSheet');
 }
 const PEEK_FALLBACK={
@@ -299,7 +329,7 @@ document.querySelectorAll('.world').forEach(w=>w.addEventListener('click',()=>{
         :`<div class="empty"><b>Prochainement</b>Les cinématiques de cet arc seront bientôt projetées ici.</div>`)(CINES[w.dataset.world]||[])}
     </div>
     <div class="ovsec"><h4>Galerie du monde</h4>
-      ${(g=>g.length?`<div class="ovgal">${g.map(x=>`<img src="${x.img}" alt="${x.cap}" data-cap="${x.cap}" data-img="${x.img}">`).join('')}</div>`
+      ${(g=>g.length?`<div class="ovgal">${g.map(x=>{const c=capOf(x);return `<img src="${x.img}" alt="${c.title}" data-title="${c.title}" data-sub="${c.sub}" data-img="${x.img}">`;}).join('')}</div>`
         :`<div class="empty"><b>En préparation</b>Les visuels de ce monde arriveront bientôt.</div>`)(GALLERY[w.dataset.world]||[])}
     </div>`;
   openOv('worldOverlay');
@@ -317,11 +347,7 @@ document.getElementById('worldPanel').addEventListener('click',e=>{
     return;
   }
   const im=e.target.closest('.ovgal img');
-  if(im){
-    document.getElementById('lbimg').src=im.dataset.img;
-    document.getElementById('lbcap').textContent=im.dataset.cap||'';
-    openOv('lightbox');return;
-  }
+  if(im){showLightbox(im.dataset.img,im.dataset.title,im.dataset.sub);return;}
   const b=e.target.closest('.chip.link'); if(!b)return;
   const c=CHARS.find(x=>x.id===b.dataset.charId);
   if(c){closeOv('worldOverlay');showChar(c);}
@@ -366,16 +392,17 @@ document.getElementById('charPanel').addEventListener('click',e=>{
 /* lightbox */
 document.getElementById('codexPanel').addEventListener('click',e=>{
   const im=e.target.closest('.ovgal img'); if(!im)return;
-  document.getElementById('lbimg').src=im.dataset.img;
-  document.getElementById('lbcap').textContent=im.dataset.cap||'';
-  openOv('lightbox');
+  showLightbox(im.dataset.img,im.dataset.title,im.dataset.sub);
 });
 document.getElementById('galArcs').addEventListener('click',e=>{
   const t=e.target.closest('.tile'); if(!t)return;
-  document.getElementById('lbimg').src=t.dataset.img;
-  document.getElementById('lbcap').textContent=t.dataset.cap;
-  openOv('lightbox');
+  showLightbox(t.dataset.img,t.dataset.title,t.dataset.sub);
 });
+function showLightbox(src,title,sub){
+  document.getElementById('lbimg').src=src;
+  document.getElementById('lbcap').innerHTML=`${title?`<b>${title}</b>`:''}${sub?`<br><span>${sub}</span>`:''}`;
+  openOv('lightbox');
+}
 
 
 /* ================= AJOUT DE PERSONNAGE ================= */
