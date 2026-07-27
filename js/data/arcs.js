@@ -29,7 +29,7 @@ window.FV.GALLERY = {
       {img:"assets/galerie/nanami.jpg", titre:"Jojo", artiste:"DocVar3n"},
       {img:"assets/galerie/violyyne.jpg", titre:"Thomas", artiste:"DocVar3n"},
       {img:"assets/galerie/mr-le-fou.jpg", titre:"Olivia", artiste:"Yunko"},
-      {img:"assets/galerie/lilian.jpg", titre:"Liliano", artiste:"DocVar3n"},
+      {img:"assets/galerie/lilian.png", titre:"Liliano", artiste:"DocVar3n"},
       {img:"assets/galerie/rob-arka-pepe.jpg", titre:"Nanami", artiste:"Docvar3n"},
       {img:"assets/galerie/thomas-docvar3n.jpg", titre:"Mat", artiste:"DocVar3n"},
       {img:"assets/galerie/thomas-rob.jpg", titre:"Rob et Nanami", artiste:"Violynne"},
