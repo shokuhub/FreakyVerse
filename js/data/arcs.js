@@ -5,11 +5,15 @@
                   badge:"Nouveau", yt:"https://youtube.com/watch?v=…"}
    (le champ yt est optionnel — s'il est présent, cliquer ouvre la vidéo)
 
-   IMAGE DE GALERIE : {img:"assets/galerie/mon-image.jpg", cap:"Légende affichée"}
+   IMAGE DE GALERIE : {img:"assets/galerie/mon-image.jpg", titre:"Nom du dessin", artiste:"Pseudo de l'artiste"}
+   (au clic, la légende affichée est "Titre — par Artiste")
 
-   1. Déposez vos fichiers images dans assets/galerie/ ou assets/cinematiques/
-   2. Ajoutez une ligne dans le bon arc ci-dessous
-   Tout se met à jour automatiquement (sections + planètes).
+   IMPORTANT — toutes les images vont dans LE MÊME dossier assets/galerie/
+   (ou assets/cinematiques/ pour les affiches), peu importe leur arc.
+   C'est UNIQUEMENT la ligne ci-dessous (dans ft1, ft2 ou circus) qui
+   détermine à quel arc une image appartient — pas son dossier physique.
+   Donc pas besoin de créer un sous-dossier par arc : un seul upload
+   suffit, on trie tout ici avec du texte.
    ============================================================ */
 window.FV = window.FV || {};
 
@@ -20,4 +24,23 @@ window.FV.ARCS = [
 ];
 /* Contenus par arc — cinématiques : {t:"Titre", d:"Type · Durée", img:"url", badge:"Badge"} ; galerie : {img:"url", cap:"Légende"} */
 window.FV.CINES = { ft1:[], ft2:[], circus:[] };
-window.FV.GALLERY = { ft1:[], ft2:[], circus:[] };
+window.FV.GALLERY = {
+    ft1:[
+      {img:"assets/galerie/nanami.jpg", titre:"Nanami", artiste:"DocVar3n"},
+      {img:"assets/galerie/violyyne.jpg", titre:"Violyyne", artiste:"Violyyne"},
+      {img:"assets/galerie/mr-le-fou.jpg", titre:"Mr. Le Fou", artiste:"DocVar3n"},
+      {img:"assets/galerie/mat.jpg", titre:"Mat", artiste:"DocVar3n"},
+      {img:"assets/galerie/rob-arka-pepe.jpg", titre:"Rob, Arka et Pepe", artiste:"Violynne"},
+      {img:"assets/galerie/thomas-docvar3n.jpg", titre:"Thomas", artiste:"DocVar3n"},
+      {img:"assets/galerie/thomas-rob.jpg", titre:"Thomas", artiste:"Rob"},
+      {img:"assets/galerie/crocronayato.jpg", titre:"CrocoNayato", artiste:"Violynne"},
+      {img:"assets/galerie/rob-et-nanami.jpg", titre:"Rob et Nanami", artiste:"Violynne"},
+      {img:"assets/galerie/nanami-x-liliano.jpg", titre:"Nanami x Liliano", artiste:"DocVar3n"},
+      {img:"assets/galerie/jojo.jpg", titre:"Jojo", artiste:"DocVar3n"},
+      {img:"assets/galerie/liliano.jpg", titre:"Liliano", artiste:"DocVar3n"},
+      {img:"assets/galerie/kuji-agent-mark.jpg", titre:"Kuji Kikso et Agent Mark", artiste:"Yunko"},
+      {img:"assets/galerie/olivia.jpg", titre:"Olivia", artiste:"Yunko"}
+    ],
+    ft2:[],
+    circus:[]
+  };
