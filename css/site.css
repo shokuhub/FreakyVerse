@@ -352,9 +352,22 @@ select option{background:var(--abyss)}
 .tile:hover img{transform:scale(1.07);filter:saturate(1.1)}
 .tile:hover::after,.tile:hover::before{opacity:1}
 
-.archead{display:flex;align-items:center;gap:1.1rem;margin:3.2rem 0 1.4rem;font-family:'Space Mono',monospace;font-size:.74rem;letter-spacing:.4em;text-transform:uppercase;color:var(--white)}
-.archead::after{content:'';flex:1;height:1px;background:linear-gradient(90deg,rgba(63,232,216,.35),transparent)}
-.archead .dot{width:9px;height:9px;border-radius:50%;background:var(--arc,#3fe8d8);box-shadow:0 0 12px var(--arc,#3fe8d8)}
+.archead{
+  width:100%;display:flex;align-items:center;gap:1.1rem;margin:1.1rem 0 0;padding:1.2rem 1.4rem;
+  font-family:'Space Mono',monospace;font-size:.74rem;letter-spacing:.32em;text-transform:uppercase;color:var(--white);
+  background:linear-gradient(160deg,rgba(7,32,39,.5),rgba(3,13,16,.4));
+  border:1px solid rgba(63,232,216,.16);border-radius:14px;cursor:pointer;transition:.35s;text-align:left;
+}
+#galArcs .archead:first-child{margin-top:0}
+.archead:hover{border-color:var(--arc,#3fe8d8);box-shadow:0 0 24px color-mix(in srgb,var(--arc,#3fe8d8) 15%,transparent)}
+.archead.open{border-color:var(--arc,#3fe8d8);background:linear-gradient(160deg,color-mix(in srgb,var(--arc,#3fe8d8) 10%,rgba(7,32,39,.6)),rgba(3,13,16,.5))}
+.archead .dot{width:9px;height:9px;border-radius:50%;background:var(--arc,#3fe8d8);box-shadow:0 0 12px var(--arc,#3fe8d8);flex-shrink:0}
+.archead .arcname{flex:1}
+.archead .arccount{font-size:.62rem;letter-spacing:.2em;color:var(--dim);font-weight:400;text-transform:none}
+.archead .archev{font-size:1.1rem;color:var(--arc,#3fe8d8);transition:transform .4s;line-height:1}
+.archead.open .archev{transform:rotate(180deg)}
+.arcpanel{max-height:0;overflow:hidden;transition:max-height .55s cubic-bezier(.2,.7,.2,1)}
+.arcpanel .masonry,.arcpanel .empty{margin-top:1.4rem}
 .empty{
   border:1px dashed rgba(63,232,216,.22);border-radius:16px;padding:2.8rem 1.6rem;text-align:center;
   color:var(--dim);font-size:.9rem;line-height:1.7;background:rgba(4,20,24,.25);
@@ -468,7 +481,9 @@ button.chip{background:none;cursor:pointer}
 #lightbox{background:rgba(2,10,12,.94)}
 #lightbox .ovpanel{display:grid;place-items:center;min-height:100vh;padding-top:4rem}
 #lightbox img{max-width:min(92vw,1000px);max-height:80vh;border-radius:14px;box-shadow:0 30px 90px rgba(0,0,0,.7),0 0 60px rgba(63,232,216,.1)}
-#lightbox figcaption{margin-top:1.2rem;text-align:center;font-family:'Space Mono',monospace;font-size:.66rem;letter-spacing:.34em;text-transform:uppercase;color:var(--mist)}
+#lightbox figcaption{margin-top:1.2rem;text-align:center;font-family:'Space Mono',monospace;font-size:.66rem;letter-spacing:.28em;text-transform:uppercase;color:var(--mist);line-height:2}
+#lightbox figcaption b{color:var(--white);font-size:.78rem;letter-spacing:.12em}
+#lightbox figcaption span{color:var(--dim);font-size:.62rem}
 
 /* ---------- bouton son ---------- */
 #sndBtn{
