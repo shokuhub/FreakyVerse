@@ -26,20 +26,20 @@ window.FV.ARCS = [
 window.FV.CINES = { ft1:[], ft2:[], circus:[] };
 window.FV.GALLERY = {
     ft1:[
-      {img:"assets/galerie/nanami.jpg", titre:"Nanami", artiste:"DocVar3n"},
-      {img:"assets/galerie/violyyne.jpg", titre:"Violyyne", artiste:"Violyyne"},
-      {img:"assets/galerie/mr-le-fou.jpg", titre:"Mr. Le Fou", artiste:"DocVar3n"},
+      {img:"assets/galerie/nanami.jpg", titre:"Jojo", artiste:"DocVar3n"},
+      {img:"assets/galerie/violyyne.jpg", titre:"Thomas", artiste:"DocVar3n"},
+      {img:"assets/galerie/mr-le-fou.jpg", titre:"Olivia", artiste:"Yunko"},
       {img:"assets/galerie/mat.jpg", titre:"Mat", artiste:"DocVar3n"},
-      {img:"assets/galerie/rob-arka-pepe.jpg", titre:"Rob, Arka et Pepe", artiste:"Violynne"},
-      {img:"assets/galerie/thomas-docvar3n.jpg", titre:"Thomas", artiste:"DocVar3n"},
-      {img:"assets/galerie/thomas-rob.jpg", titre:"Thomas", artiste:"Rob"},
-      {img:"assets/galerie/crocronayato.jpg", titre:"CrocoNayato", artiste:"Violynne"},
-      {img:"assets/galerie/rob-et-nanami.jpg", titre:"Rob et Nanami", artiste:"Violynne"},
-      {img:"assets/galerie/nanami-x-liliano.jpg", titre:"Nanami x Liliano", artiste:"DocVar3n"},
-      {img:"assets/galerie/jojo.jpg", titre:"Jojo", artiste:"DocVar3n"},
-      {img:"assets/galerie/liliano.jpg", titre:"Liliano", artiste:"DocVar3n"},
-      {img:"assets/galerie/kuji-agent-mark.jpg", titre:"Kuji Kikso et Agent Mark", artiste:"Yunko"},
-      {img:"assets/galerie/olivia.jpg", titre:"Olivia", artiste:"Yunko"}
+      {img:"assets/galerie/rob-arka-pepe.jpg", titre:"Nanami", artiste:"Docvar3n"},
+      {img:"assets/galerie/thomas-docvar3n.jpg", titre:"Mat", artiste:"DocVar3n"},
+      {img:"assets/galerie/thomas-rob.jpg", titre:"Rob et Nanami", artiste:"Violynne"},
+      {img:"assets/galerie/crocronayato.jpg", titre:"Nanami x Liliano", artiste:"DocVar3n"},
+      {img:"assets/galerie/rob-et-nanami.jpg", titre:"CrocoNayato", artiste:"Violyyne"},
+      {img:"assets/galerie/nanami-x-liliano.jpg", titre:"Violyyne", artiste:"Violyyne"},
+      {img:"assets/galerie/jojo.jpg", titre:"Mr.Le fou", artiste:"DocVar3n"},
+      {img:"assets/galerie/liliano.jpg", titre:"Kuji, Kikso et Agent Mark", artiste:"Yunko"},
+      {img:"assets/galerie/kuji-agent-mark.jpg", titre:"Pepe, Rob et Arka", artiste:"Violyyne"},
+      {img:"assets/galerie/olivia.jpg", titre:"Thomas", artiste:"Rob"}
     ],
     ft2:[],
     circus:[]
