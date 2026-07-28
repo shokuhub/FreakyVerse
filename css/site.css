@@ -287,6 +287,8 @@ select option{background:var(--abyss)}
 .arcpick input:checked+span{color:var(--void);background:var(--glow);border-color:var(--glow);box-shadow:0 0 20px rgba(63,232,216,.35)}
 .relrow{display:grid;grid-template-columns:1.4fr 1fr auto;gap:.6rem;margin-bottom:.6rem}
 .relrow button{border:1px solid rgba(255,120,140,.3);background:none;color:#ff7a8a;border-radius:10px;padding:0 .9rem;cursor:pointer;font-size:1rem}
+.linkrow{display:grid;grid-template-columns:1.4fr 1.6fr auto;gap:.6rem;margin-bottom:.6rem}
+.linkrow button{border:1px solid rgba(255,120,140,.3);background:none;color:#ff7a8a;border-radius:10px;padding:0 .9rem;cursor:pointer;font-size:1rem}
 .addbtn{
   font-family:'Space Mono',monospace;font-size:.66rem;letter-spacing:.24em;text-transform:uppercase;
   color:var(--glow);background:none;border:1px dashed rgba(63,232,216,.35);border-radius:999px;
