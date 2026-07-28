@@ -29,7 +29,12 @@ function resize(){W2=cv.width=innerWidth;H2=cv.height=innerHeight;
   dust=Array.from({length:34},()=>({x:Math.random()*W2,y:Math.random()*H2,r:Math.random()*2+1,vy:.12+Math.random()*.3,vx:(Math.random()-.5)*.14,a:.08+Math.random()*.2}));
 }
 addEventListener('resize',resize);resize();
+let lastTick=0;
 function tick(t){
+  /* on limite le redessin à ~30 images/seconde : suffisant pour un effet doux,
+     et ça évite de faire recalculer en continu le flou du menu au-dessus, à chaque frame de l'écran */
+  if(t-lastTick<33){ if(!reduced) requestAnimationFrame(tick); return; }
+  lastTick=t;
   cx.clearRect(0,0,W2,H2);
   for(const s of stars){
     const tw=.35+.65*Math.abs(Math.sin(t/1400*s.s+s.p));
