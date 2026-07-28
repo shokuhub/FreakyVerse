@@ -293,7 +293,7 @@ function tryClose(id){
   closeOv(id);
 }
 document.querySelectorAll('.ovclose').forEach(b=>b.addEventListener('click',()=>tryClose(b.dataset.close)));
-document.querySelectorAll('.overlay').forEach(o=>o.addEventListener('click',e=>{if(e.target===o)tryClose(o.id)}));
+/* fermeture : uniquement via le bouton ✕ ou la touche Échap — le clic en dehors ne ferme plus la fenêtre */
 addEventListener('keydown',e=>{if(e.key==='Escape')document.querySelectorAll('.overlay.open').forEach(o=>tryClose(o.id))});
 
 /* monde */
