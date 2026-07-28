@@ -48,7 +48,7 @@ window.FV.GALLERY = {
       {img:"assets/galerie/nanamizombie.png", titre:"Nanami", artiste:"DocVar3n"},
       {img:"assets/galerie/igor.png", titre:"Igor", artiste:"Aurélie"},
       {img:"assets/galerie/Nyx.jpg", titre:"NYX", artiste:"Violyyne"},
-      {img:"assets/galerie/nyx.jpg", titre:"Nyx", artiste:"Violyyne"},
+      {img:"assets/galerie/nynyx.jpg", titre:"Nyx", artiste:"Violyyne"},
       {img:"assets/galerie/nyxxx.png", titre:"Nyx", artiste:"Violyyne"},
       {img:"assets/galerie/Nyxetpimprenelle.jpg", titre:"Nyx Pimprenelle", artiste:"Violyyne"},
       {img:"assets/galerie/nyxmaveneliza.jpg", titre:"Nyx Maven Elizabeth", artiste:"Violyyne"},
