@@ -251,6 +251,11 @@
 
     <div class="field"><label>Couleur d'aura</label><input type="color" id="fColor" value="#3fe8d8" style="height:52px;padding:.3rem;cursor:pointer"></div>
 
+    <div class="field"><label>OST — musique de la fiche (optionnel)</label>
+      <input id="fOst" placeholder="Lien YouTube…">
+      <div class="hint">Facultatif. Si vous ajoutez un lien, les visiteurs pourront choisir de l'écouter en consultant la fiche de votre personnage.</div>
+    </div>
+
     <div class="formfoot">
       <button class="btn solid" id="fSave">Enregistrer mon personnage</button>
       <div class="pwerr" id="fErr" style="align-self:center"></div>
@@ -282,6 +287,14 @@
 
 <button id="sndBtn" aria-label="Activer le son"><span class="bars"><i></i><i></i><i></i></span></button>
 <div id="sndTip">Activer l'ambiance sonore</div>
+
+<div id="ostPrompt">
+  <div class="ostmsg">🎵 Cette fiche a une bande-son.</div>
+  <div class="ostbtns">
+    <button id="ostYes" class="btn solid" style="padding:.55rem 1.1rem">Activer</button>
+    <button id="ostNo" class="btn ghost" style="padding:.55rem 1.1rem">Non merci</button>
+  </div>
+</div>
 
 <script src="js/data/site.js"></script>
 <script src="js/data/arcs.js"></script>
