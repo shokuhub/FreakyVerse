@@ -57,14 +57,26 @@ function tick(t){
 }
 if(!reduced) requestAnimationFrame(tick); else tick(0);
 
-/* mouse parallax on fog + hero art */
+/* mouse parallax on fog + hero art — throttlé à une fois par frame, via quickTo (bien moins coûteux que gsap.to répété) */
 if(!reduced){
+  const qx1=gsap.quickTo('.f1','x',{duration:2,ease:'power2.out'});
+  const qy1=gsap.quickTo('.f1','y',{duration:2,ease:'power2.out'});
+  const qx2=gsap.quickTo('.f2','x',{duration:2.4,ease:'power2.out'});
+  const qy2=gsap.quickTo('.f2','y',{duration:2.4,ease:'power2.out'});
+  const qx3=gsap.quickTo('#heroScene','x',{duration:1.6,ease:'power2.out'});
+  const qy3=gsap.quickTo('#heroScene','y',{duration:1.6,ease:'power2.out'});
+  let mmPending=false, lastNx=0, lastNy=0;
   addEventListener('mousemove',e=>{
-    const nx=(e.clientX/innerWidth-.5), ny=(e.clientY/innerHeight-.5);
-    gsap.to('.f1',{x:nx*30,y:ny*20,duration:2,ease:'power2.out'});
-    gsap.to('.f2',{x:nx*-42,y:ny*-26,duration:2.4,ease:'power2.out'});
-    gsap.to('#heroScene',{x:nx*-18,y:ny*-10,duration:1.6,ease:'power2.out'});
-  });
+    lastNx=(e.clientX/innerWidth-.5); lastNy=(e.clientY/innerHeight-.5);
+    if(mmPending)return;
+    mmPending=true;
+    requestAnimationFrame(()=>{
+      mmPending=false;
+      qx1(lastNx*30); qy1(lastNy*20);
+      qx2(lastNx*-42); qy2(lastNy*-26);
+      qx3(lastNx*-18); qy3(lastNy*-10);
+    });
+  },{passive:true});
 }
 
 /* ================= INTRO SEQUENCE ================= */
@@ -198,7 +210,7 @@ document.getElementById('cineArcs').innerHTML=ARCS.map(a=>{
   const items=CINES[a.id]||[];
   const body=items.length
     ? `<div class="cinerow">${items.map(c=>`
-        <div class="cine" data-yt="${c.yt||''}" style="background-image:linear-gradient(rgba(2,10,12,.25),rgba(2,10,12,.25)),url('${c.img}')">
+        <div class="cine" data-yt="${c.yt||''}" data-bg="${c.img}">
           <span class="badge">${c.badge}</span>
           <div class="shine"></div><div class="play"></div>
           <div class="cmeta"><div class="ct">${c.t}</div><div class="cd">${c.d}</div></div>
@@ -212,7 +224,8 @@ document.getElementById('cineArcs').innerHTML=ARCS.map(a=>{
     <div class="arcpanel" id="cinePanel-${a.id}">${body}</div>`;
 }).join('');
 
-/* accordéon cinématiques : un seul arc ouvert à la fois */
+/* accordéon cinématiques : un seul arc ouvert à la fois — les affiches ne se chargent
+   qu'au moment où on ouvre l'arc (pas toutes en même temps au chargement de la page) */
 document.querySelectorAll('#cineArcs .archead').forEach(btn=>{
   btn.addEventListener('click',()=>{
     const panel=document.getElementById('cinePanel-'+btn.dataset.arc);
@@ -223,9 +236,11 @@ document.querySelectorAll('#cineArcs .archead').forEach(btn=>{
     });
     if(!isOpen){
       btn.classList.add('open');
+      panel.querySelectorAll('.cine[data-bg]').forEach(el=>{
+        el.style.backgroundImage=`linear-gradient(rgba(2,10,12,.25),rgba(2,10,12,.25)),url('${el.dataset.bg}')`;
+        el.removeAttribute('data-bg');
+      });
       panel.style.maxHeight=panel.scrollHeight+'px';
-      panel.querySelectorAll('img,div.cine').forEach(()=>{});
-      const imgs=panel.querySelectorAll('.cine');
       /* recalcule la hauteur une fois les images de fond chargées */
       setTimeout(()=>{ if(btn.classList.contains('open'))panel.style.maxHeight=panel.scrollHeight+'px'; },300);
     }
