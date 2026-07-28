@@ -95,6 +95,7 @@ h2{
   min-height:100svh;display:flex;flex-direction:column;justify-content:flex-end;
   padding-bottom:9vh;overflow:hidden;
 }
+#heroScene.paused, #heroScene.paused *{animation-play-state:paused!important}
 #heroScene{
   position:absolute;inset:0;z-index:-1;overflow:hidden;will-change:transform;
   -webkit-mask-image:linear-gradient(#000 72%,transparent 98%);
