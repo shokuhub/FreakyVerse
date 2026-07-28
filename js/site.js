@@ -5,9 +5,7 @@
    ============================================================ */
 const FV=window.FV;
 const ARCS=FV.ARCS, CINES=FV.CINES, GALLERY=FV.GALLERY, CHARS=FV.CHARS, WORLDS=FV.WORLDS, PASS=FV.PASS;
-
 function pixelFace(p){
-  // p: {bg, hair, skin, eye, mouth, hairRows}
   return `<svg class="face" viewBox="0 0 8 8" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges">
   <rect width="8" height="8" fill="${p.bg}"/>
   <rect x="1" y="1" width="6" height="${p.hairRows||3}" fill="${p.hair}"/>
@@ -18,8 +16,6 @@ function pixelFace(p){
   ${p.extra||""}
   </svg>`;
 }
-
-
 /* ================= AMBIENT CANVAS ================= */
 const cv = document.getElementById('sky'), cx = cv.getContext('2d');
 let stars=[], dust=[], shoot=null, W2,H2;
@@ -30,11 +26,9 @@ function resize(){W2=cv.width=innerWidth;H2=cv.height=innerHeight;
 }
 addEventListener('resize',resize);resize();
 let lastTick=0;
-let skyRunning=true;   /* mis en pause quand l'onglet n'est pas visible, ou quand le hero est scrollé hors champ */
+let skyRunning=true;
 function tick(t){
   if(!skyRunning){ requestAnimationFrame(tick); return; }
-  /* on limite le redessin à ~30 images/seconde : suffisant pour un effet doux,
-     et ça évite de faire recalculer en continu le flou du menu au-dessus, à chaque frame de l'écran */
   if(t-lastTick<33){ if(!reduced) requestAnimationFrame(tick); return; }
   lastTick=t;
   cx.clearRect(0,0,W2,H2);
@@ -63,13 +57,8 @@ function tick(t){
   requestAnimationFrame(tick);
 }
 requestAnimationFrame(tick);
-
-/* pause complète quand l'onglet n'est pas actif (économise le CPU en arrière-plan) */
 document.addEventListener('visibilitychange',()=>{ skyRunning=!document.hidden && !reduced; });
 skyRunning=!document.hidden && !reduced;
-
-/* pause le fond animé (et les cristaux/étincelles du hero) dès qu'on a scrollé loin du haut de la page —
-   inutile de faire tourner ces animations quand elles ne sont plus du tout visibles à l'écran */
 const heroObs=new IntersectionObserver(entries=>{
   const visible=entries[0].isIntersecting;
   skyRunning=visible && !document.hidden && !reduced;
@@ -77,8 +66,6 @@ const heroObs=new IntersectionObserver(entries=>{
 },{threshold:0});
 const heroEl=document.getElementById('hero');
 if(heroEl)heroObs.observe(heroEl);
-
-/* mouse parallax on fog + hero art — throttlé à une fois par frame, via quickTo (bien moins coûteux que gsap.to répété) */
 if(!reduced){
   const qx1=gsap.quickTo('.f1','x',{duration:2,ease:'power2.out'});
   const qy1=gsap.quickTo('.f1','y',{duration:2,ease:'power2.out'});
@@ -99,7 +86,29 @@ if(!reduced){
     });
   },{passive:true});
 }
-
+/* ================= ALERTE PERFORMANCE ================= */
+(function(){
+  const KEY='fv_perf_dismissed';
+  try{ if(localStorage.getItem(KEY)==='1') return; }catch(e){}
+  const el=document.getElementById('perfAlert');
+  if(!el)return;
+  setTimeout(()=>el.classList.add('show'), 2600);
+  el.querySelectorAll('.perfbtn').forEach(b=>{
+    b.addEventListener('click',async ()=>{
+      const path=b.dataset.path;
+      try{
+        await navigator.clipboard.writeText(path);
+        document.getElementById('perfCopied').textContent=`Copié : ${path} — collez-le dans la barre d'adresse`;
+      }catch(e){
+        document.getElementById('perfCopied').textContent=path;
+      }
+    });
+  });
+  document.getElementById('perfClose').addEventListener('click',()=>{
+    el.classList.remove('show');
+    try{localStorage.setItem(KEY,'1')}catch(e){}
+  });
+})();
 /* ================= INTRO SEQUENCE ================= */
 const intro=document.getElementById('intro'), iLogo=document.getElementById('introLogo'),
       nav=document.getElementById('nav'), navLogo=document.getElementById('navLogo');
@@ -125,7 +134,6 @@ function enter(){
 }
 intro.addEventListener('click',enter);
 setTimeout(enter, 3400);
-
 function revealHero(){
   const words=document.querySelectorAll('#heroTitle .w span');
   const tl=gsap.timeline();
@@ -135,20 +143,15 @@ function revealHero(){
     .to('#heroRow',{opacity:1,duration:.9},'-=.6')
     .to('#scrollcue',{opacity:1,duration:1},'-=.4');
 }
-/* split hero title into words */
 const ht=document.getElementById('heroTitle');
 ht.innerHTML=ht.innerHTML.split(/\s+/).map(w=>`<span class="w"><span>${w}</span></span>`).join(' ');
-
 /* ================= SCROLL REVEALS ================= */
 const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target)}}),{threshold:.12});
 document.querySelectorAll('.rv').forEach(el=>io.observe(el));
-
-/* hero art slow parallax on scroll */
 gsap.registerPlugin(ScrollTrigger);
 if(!reduced){
   gsap.to('#heroScene',{yPercent:14,ease:'none',scrollTrigger:{trigger:'#hero',start:'top top',end:'bottom top',scrub:true}});
 }
-
 /* ================= CONSTELLATION LINES ================= */
 function drawConstellation(){
   const svg=document.getElementById('constellation');
@@ -166,13 +169,9 @@ function drawConstellation(){
 }
 addEventListener('resize',drawConstellation);
 setTimeout(drawConstellation,600);
-
 /* ================= BUILD SECTIONS ================= */
-/* characters */
 const cg=document.getElementById('chargrid');
 const visual=c=>c.img?`<img class="face" src="${c.img}" alt="${c.name}">`:pixelFace(c.face);
-
-/* --- personnages des joueurs : base partagée Supabase --- */
 const SB_URL=(FV.SUPABASE_URL||'').replace(/\/rest\/v1\/?$/,'').replace(/\/$/,'');
 const SB_KEY=FV.SUPABASE_KEY||'';
 const SB_ON=!!(SB_URL&&SB_KEY);
@@ -190,14 +189,12 @@ async function loadShared(){
     renderChars();
   }catch(e){console.warn('Base indisponible :',e);}
 }
-/* mode local de secours (si les clés Supabase sont retirées) */
 const STORE='fv_chars';
 let memStore=[];
 function loadSaved(){try{return JSON.parse(localStorage.getItem(STORE)||'[]')}catch(e){return memStore}}
 function persist(list){try{localStorage.setItem(STORE,JSON.stringify(list))}catch(e){memStore=list}}
 let SAVED=SB_ON?[]:loadSaved();
 CHARS.push(...SAVED);
-
 function renderChars(){
   cg.innerHTML=CHARS.map((c,i)=>`
   <div class="char" style="--cg:${c.glow}" data-char="${i}">
@@ -225,8 +222,6 @@ function renderChars(){
 }
 renderChars();
 loadShared();
-
-/* cinématiques par arc : accordéon — un clic sur un arc déplie ses affiches */
 document.getElementById('cineArcs').innerHTML=ARCS.map(a=>{
   const items=CINES[a.id]||[];
   const body=items.length
@@ -244,9 +239,6 @@ document.getElementById('cineArcs').innerHTML=ARCS.map(a=>{
     </button>
     <div class="arcpanel" id="cinePanel-${a.id}">${body}</div>`;
 }).join('');
-
-/* accordéon cinématiques : un seul arc ouvert à la fois — les affiches ne se chargent
-   qu'au moment où on ouvre l'arc (pas toutes en même temps au chargement de la page) */
 document.querySelectorAll('#cineArcs .archead').forEach(btn=>{
   btn.addEventListener('click',()=>{
     const panel=document.getElementById('cinePanel-'+btn.dataset.arc);
@@ -262,19 +254,14 @@ document.querySelectorAll('#cineArcs .archead').forEach(btn=>{
         el.removeAttribute('data-bg');
       });
       panel.style.maxHeight=panel.scrollHeight+'px';
-      /* recalcule la hauteur une fois les images de fond chargées */
       setTimeout(()=>{ if(btn.classList.contains('open'))panel.style.maxHeight=panel.scrollHeight+'px'; },300);
     }
   });
 });
-
-/* légende d'une image de galerie : {titre, artiste} (nouveau) ou {cap} (ancien format) */
 function capOf(g){
   if(g.titre||g.artiste) return {title:g.titre||'Sans titre',sub:g.artiste?`par ${g.artiste}`:''};
   return {title:g.cap||'',sub:''};
 }
-
-/* galerie par arc : accordéon — un clic sur un arc déplie ses images */
 document.getElementById('galArcs').innerHTML=ARCS.map(a=>{
   const items=GALLERY[a.id]||[];
   const body=items.length
@@ -288,8 +275,6 @@ document.getElementById('galArcs').innerHTML=ARCS.map(a=>{
     </button>
     <div class="arcpanel" id="galPanel-${a.id}">${body}</div>`;
 }).join('');
-
-/* accordéon : un seul arc ouvert à la fois, avec animation de hauteur */
 document.querySelectorAll('#galArcs .archead').forEach(btn=>{
   btn.addEventListener('click',()=>{
     const panel=document.getElementById('galPanel-'+btn.dataset.arc);
@@ -307,12 +292,9 @@ document.querySelectorAll('#galArcs .archead').forEach(btn=>{
     }
   });
 });
-
 /* ================= OVERLAYS ================= */
 function openOv(id){document.getElementById(id).classList.add('open');document.body.style.overflow='hidden';if(typeof SND!=='undefined'&&SND.on)SND.open()}
 function closeOv(id){document.getElementById(id).classList.remove('open');document.body.style.overflow='';if(typeof SND!=='undefined'&&SND.on)SND.close();if(id==='charSheet')stopOst();}
-
-/* la fiche "Ajouter un personnage" contient-elle des infos non enregistrées ? */
 function formIsDirty(){
   const ids=['fName','fQuote','fDesc','fPerso','fFun','fOst'];
   if(ids.some(id=>document.getElementById(id).value.trim()))return true;
@@ -329,10 +311,7 @@ function tryClose(id){
   closeOv(id);
 }
 document.querySelectorAll('.ovclose').forEach(b=>b.addEventListener('click',()=>tryClose(b.dataset.close)));
-/* fermeture : uniquement via le bouton ✕ ou la touche Échap — le clic en dehors ne ferme plus la fenêtre */
 addEventListener('keydown',e=>{if(e.key==='Escape')document.querySelectorAll('.overlay.open').forEach(o=>tryClose(o.id))});
-
-/* monde */
 const lore=s=>(s||'').replace(/\[\[([^\]|]+)\|([^\]]+)\]\]/g,'<button class="lore" data-codex="$1">$2</button>');
 let curWorld=null;
 function showCodex(entry){
@@ -430,7 +409,6 @@ document.getElementById('worldPanel').addEventListener('click',e=>{
   const c=CHARS.find(x=>x.id===b.dataset.charId);
   if(c){closeOv('worldOverlay');showChar(c);}
 });
-
 /* ================= OST DES FICHES PERSONNAGES ================= */
 function ytId(url){
   if(!url)return null;
@@ -458,8 +436,6 @@ document.getElementById('ostYes').addEventListener('click',()=>{
   if(ostPrompt.dataset.pendingId)playOst(ostPrompt.dataset.pendingId);
 });
 document.getElementById('ostNo').addEventListener('click',()=>ostPrompt.classList.remove('show'));
-
-/* fiche personnage */
 function showChar(c){
   stopOst();
   document.documentElement.style.setProperty('--accent',c.glow);
@@ -503,8 +479,6 @@ document.getElementById('charPanel').addEventListener('click',e=>{
   const c=CHARS.find(x=>x.id===b.dataset.goto);
   if(c) showChar(c);
 });
-
-/* lightbox */
 document.getElementById('codexPanel').addEventListener('click',e=>{
   const im=e.target.closest('.ovgal img'); if(!im)return;
   showLightbox(im.dataset.img,im.dataset.title,im.dataset.sub);
@@ -518,11 +492,7 @@ function showLightbox(src,title,sub){
   document.getElementById('lbcap').innerHTML=`${title?`<b>${title}</b>`:''}${sub?`<br><span>${sub}</span>`:''}`;
   openOv('lightbox');
 }
-
-
 /* ================= AJOUT DE PERSONNAGE ================= */
-
-
 document.getElementById('pwOk').addEventListener('click',checkPw);
 document.getElementById('pwInput').addEventListener('keydown',e=>{if(e.key==='Enter')checkPw()});
 function checkPw(){
@@ -535,13 +505,11 @@ function checkPw(){
     box.classList.remove('err'); void box.offsetWidth; box.classList.add('err');
   }
 }
-
 const ARC_SHORT={ft1:'FreakyTown S1',ft2:'FreakyTown S2',circus:'Digital Circus'};
 function rpLabel(arcs){
   if(arcs.length===2&&arcs.includes('ft1')&&arcs.includes('ft2'))return 'FreakyTown — Saisons 1 & 2';
   return arcs.map(a=>ARC_SHORT[a]).join(' · ');
 }
-
 function relRow(){
   const d=document.createElement('div');d.className='relrow';
   d.innerHTML=`<input placeholder="ex : Allié de… / Rivalité avec…">
@@ -551,7 +519,6 @@ function relRow(){
   return d;
 }
 document.getElementById('fAddRel').addEventListener('click',()=>document.getElementById('fRels').appendChild(relRow()));
-
 function linkRow(){
   const d=document.createElement('div');d.className='linkrow';
   d.innerHTML=`<input placeholder="Titre du lien (ex : Panel Pinterest)">
@@ -561,7 +528,6 @@ function linkRow(){
   return d;
 }
 document.getElementById('fAddLink').addEventListener('click',()=>document.getElementById('fLinks').appendChild(linkRow()));
-
 let fImgData=null;
 document.getElementById('fImg').addEventListener('change',e=>{
   const f=e.target.files[0]; if(!f)return;
@@ -570,7 +536,6 @@ document.getElementById('fImg').addEventListener('change',e=>{
   r.onload=()=>{fImgData=r.result;const p=document.getElementById('fImgPrev');p.src=fImgData;p.style.display='block'};
   r.readAsDataURL(f);
 });
-
 function openForm(){
   fImgData=null;
   document.getElementById('fErr').textContent='';
@@ -583,7 +548,6 @@ function openForm(){
   const lks=document.getElementById('fLinks');lks.innerHTML='';lks.appendChild(linkRow());
   openOv('charForm');
 }
-
 document.getElementById('fSave').addEventListener('click',()=>{
   const name=document.getElementById('fName').value.trim();
   const arcs=[...document.querySelectorAll('#fArcs input:checked')].map(i=>i.value);
@@ -631,13 +595,10 @@ document.getElementById('fSave').addEventListener('click',()=>{
     showChar(c);
   }
 });
-
-
 /* ================= SOUND DESIGN (Web Audio, 100% procédural) ================= */
 const SND=(()=>{
   let ctx=null,master=null,verb=null,on=false;
   let droneNodes=[],windNodes=[],sparkTimer=null;
-
   function makeImpulse(seconds=2.8,decay=3.2){
     const rate=ctx.sampleRate,len=rate*seconds,buf=ctx.createBuffer(2,len,rate);
     for(let ch=0;ch<2;ch++){const d=buf.getChannelData(ch);
@@ -652,7 +613,6 @@ const SND=(()=>{
     const vg=ctx.createGain();vg.gain.value=.5;
     verb.connect(vg);vg.connect(master);
   }
-  /* gamme pentatonique — l'ossature "magique" de l'ambiance */
   const SCALE=[440,493.88,554.37,659.25,739.99,880,987.77,1108.73,1318.5];
   function chime(f,vol=.03,dur=3){
     if(!on)return;
@@ -669,7 +629,6 @@ const SND=(()=>{
     });
   }
   function startAmbient(){
-    /* --- nappe éthérée : accord suspendu qui respire, aucun grondement --- */
     const pad=[[220,.014,.05],[330,.011,.037],[440,.009,.043],[554.37,.006,.031]];
     pad.forEach(([f,g,rate])=>{
       const o=ctx.createOscillator(),gn=ctx.createGain(),lfo=ctx.createOscillator(),lg=ctx.createGain();
@@ -680,7 +639,6 @@ const SND=(()=>{
       const rg=ctx.createGain();rg.gain.value=.8;gn.connect(rg);rg.connect(verb);
       o.start();lfo.start();droneNodes.push(o,lfo);
     });
-    /* --- boîte à musique céleste : notes pentatoniques génératives --- */
     const nextNote=()=>{
       if(on){
         const f=SCALE[Math.floor(Math.random()*SCALE.length)];
@@ -690,7 +648,6 @@ const SND=(()=>{
       sparkTimer=setTimeout(nextNote,2600+Math.random()*3800);
     };
     nextNote();
-    /* --- étincelles occasionnelles --- */
     setInterval(()=>{if(on&&Math.random()<.5)sparkle();},9000);
   }
   function tone(f1,f2,dur,vol,type='sine',rev=.6){
@@ -745,8 +702,6 @@ const SND=(()=>{
     get on(){return on}
   };
 })();
-
-/* --- bouton + mémoire du choix --- */
 const sndBtn=document.getElementById('sndBtn'),sndTip=document.getElementById('sndTip');
 function setSnd(v){
   if(v){SND.enable();sndBtn.classList.add('on');sndBtn.setAttribute('aria-label','Couper le son');}
@@ -755,7 +710,6 @@ function setSnd(v){
   sndTip.classList.remove('show');
 }
 sndBtn.addEventListener('click',()=>setSnd(!SND.on));
-/* préférence retenue : on réactive au premier geste (règle des navigateurs) */
 let wantSound=false;
 try{wantSound=localStorage.getItem('fv_sound')==='1'}catch(e){}
 if(wantSound){
@@ -765,8 +719,6 @@ if(wantSound){
   setTimeout(()=>{if(!SND.on)sndTip.classList.add('show')},4600);
   setTimeout(()=>sndTip.classList.remove('show'),11000);
 }
-
-/* --- sons d'interface (délégation) --- */
 let lastHover=0;
 document.addEventListener('pointerover',e=>{
   if(!SND.on)return;
@@ -782,12 +734,8 @@ document.addEventListener('click',e=>{
   if(!SND.on)return;
   if(e.target.closest('a,button,.char,.cine,.tile,.world,.com,.codexcard'))SND.click();
 });
-
-/* burger */
 document.getElementById('burger').addEventListener('click',()=>document.getElementById('navlinks').classList.toggle('open'));
 document.querySelectorAll('.navlinks a').forEach(a=>a.addEventListener('click',()=>document.getElementById('navlinks').classList.remove('open')));
-
-/* --- cinématiques : clic = ouvre la vidéo (champ yt dans les données) --- */
 document.addEventListener('click',e=>{
   const cn=e.target.closest('.cine');
   if(cn&&cn.dataset.yt)window.open(cn.dataset.yt,'_blank','noopener');
