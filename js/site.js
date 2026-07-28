@@ -441,7 +441,7 @@ function showChar(c){
         <blockquote>${c.quote}</blockquote>
       </div>
     </div>
-    <div class="ovsec"><h4>Histoire</h4><div class="lead">${c.desc}</div></div>
+    <div class="ovsec"><h4>Histoire</h4><div class="lead">${lore(c.desc)}</div></div>
     ${c.perso?`<div class="ovsec"><h4>Personnalité</h4><p class="lead">${c.perso}</p></div>`:''}
     <div class="ovsec"><h4>Relations</h4>${relHtml}</div>
     <div class="ovsec"><h4>Anecdotes</h4>
