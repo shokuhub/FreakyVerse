@@ -146,7 +146,7 @@ const SB_ON=!!(SB_URL&&SB_KEY);
 const sbHeaders={apikey:SB_KEY,Authorization:'Bearer '+SB_KEY,'Content-Type':'application/json'};
 function rowToChar(r){return{id:r.id,name:r.nom,rp:r.rp||'',arcs:r.arcs||[],glow:r.glow||'#3fe8d8',
   quote:r.citation||'',desc:r.histoire||'',perso:r.personnalite||'',rel:r.relations||[],
-  fun:r.anecdotes||[],img:r.img||null,face:r.face||null};}
+  fun:r.anecdotes||[],img:r.img||null,face:r.face||null,ost:r.ost||null};}
 async function loadShared(){
   if(!SB_ON)return;
   try{
@@ -249,10 +249,26 @@ document.querySelectorAll('#galArcs .archead').forEach(btn=>{
 
 /* ================= OVERLAYS ================= */
 function openOv(id){document.getElementById(id).classList.add('open');document.body.style.overflow='hidden';if(typeof SND!=='undefined'&&SND.on)SND.open()}
-function closeOv(id){document.getElementById(id).classList.remove('open');document.body.style.overflow='';if(typeof SND!=='undefined'&&SND.on)SND.close()}
-document.querySelectorAll('.ovclose').forEach(b=>b.addEventListener('click',()=>closeOv(b.dataset.close)));
-document.querySelectorAll('.overlay').forEach(o=>o.addEventListener('click',e=>{if(e.target===o)closeOv(o.id)}));
-addEventListener('keydown',e=>{if(e.key==='Escape')document.querySelectorAll('.overlay.open').forEach(o=>closeOv(o.id))});
+function closeOv(id){document.getElementById(id).classList.remove('open');document.body.style.overflow='';if(typeof SND!=='undefined'&&SND.on)SND.close();if(id==='charSheet')stopOst();}
+
+/* la fiche "Ajouter un personnage" contient-elle des infos non enregistrées ? */
+function formIsDirty(){
+  const ids=['fName','fQuote','fDesc','fPerso','fFun','fOst'];
+  if(ids.some(id=>document.getElementById(id).value.trim()))return true;
+  if([...document.querySelectorAll('#fArcs input:checked')].length)return true;
+  if([...document.querySelectorAll('#fRels .relrow input')].some(i=>i.value.trim()))return true;
+  if(fImgData)return true;
+  return false;
+}
+function tryClose(id){
+  if(id==='charForm' && formIsDirty()){
+    if(!confirm('Êtes-vous sûr de vouloir quitter la création de ce personnage ?\n\nToutes les informations saisies seront perdues.'))return;
+  }
+  closeOv(id);
+}
+document.querySelectorAll('.ovclose').forEach(b=>b.addEventListener('click',()=>tryClose(b.dataset.close)));
+document.querySelectorAll('.overlay').forEach(o=>o.addEventListener('click',e=>{if(e.target===o)tryClose(o.id)}));
+addEventListener('keydown',e=>{if(e.key==='Escape')document.querySelectorAll('.overlay.open').forEach(o=>tryClose(o.id))});
 
 /* monde */
 const lore=s=>(s||'').replace(/\[\[([^\]|]+)\|([^\]]+)\]\]/g,'<button class="lore" data-codex="$1">$2</button>');
@@ -353,8 +369,37 @@ document.getElementById('worldPanel').addEventListener('click',e=>{
   if(c){closeOv('worldOverlay');showChar(c);}
 });
 
+/* ================= OST DES FICHES PERSONNAGES ================= */
+function ytId(url){
+  if(!url)return null;
+  const m=url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|shorts\/))([\w-]{6,})/);
+  return m?m[1]:null;
+}
+let ostWasAmbientOn=false, ostFrame=null;
+const ostPrompt=document.getElementById('ostPrompt');
+function stopOst(){
+  ostPrompt.classList.remove('show');
+  if(ostFrame){ostFrame.remove();ostFrame=null;
+    if(ostWasAmbientOn&&typeof SND!=='undefined'&&!SND.on)setSnd(true);
+  }
+}
+function playOst(id){
+  if(typeof SND!=='undefined'&&SND.on){ostWasAmbientOn=true;setSnd(false);}else{ostWasAmbientOn=false;}
+  ostFrame=document.createElement('iframe');
+  ostFrame.width='1';ostFrame.height='1';ostFrame.style.cssText='position:fixed;bottom:0;right:0;opacity:0;pointer-events:none';
+  ostFrame.allow='autoplay';
+  ostFrame.src=`https://www.youtube.com/embed/${id}?autoplay=1&controls=0&loop=1&playlist=${id}`;
+  document.body.appendChild(ostFrame);
+  ostPrompt.classList.remove('show');
+}
+document.getElementById('ostYes').addEventListener('click',()=>{
+  if(ostPrompt.dataset.pendingId)playOst(ostPrompt.dataset.pendingId);
+});
+document.getElementById('ostNo').addEventListener('click',()=>ostPrompt.classList.remove('show'));
+
 /* fiche personnage */
 function showChar(c){
+  stopOst();
   document.documentElement.style.setProperty('--accent',c.glow);
   const relHtml = c.rel.length
     ? `<div class="chips">${c.rel.map(r=>Array.isArray(r)
@@ -378,6 +423,11 @@ function showChar(c){
     </div>`;
   document.getElementById('charSheet').scrollTop=0;
   openOv('charSheet');
+  const vid=ytId(c.ost);
+  if(vid){
+    ostPrompt.dataset.pendingId=vid;
+    setTimeout(()=>ostPrompt.classList.add('show'),500);
+  }
 }
 cg.addEventListener('click',e=>{
   const el=e.target.closest('.char'); if(!el)return;
@@ -450,7 +500,7 @@ function openForm(){
   fImgData=null;
   document.getElementById('fErr').textContent='';
   document.getElementById('fImgPrev').style.display='none';
-  ['fName','fQuote','fDesc','fPerso','fFun'].forEach(id=>document.getElementById(id).value='');
+  ['fName','fQuote','fDesc','fPerso','fFun','fOst'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('fImg').value='';
   document.getElementById('fColor').value='#3fe8d8';
   document.querySelectorAll('#fArcs input').forEach(i=>i.checked=false);
@@ -476,15 +526,16 @@ document.getElementById('fSave').addEventListener('click',()=>{
     if(!label)return null;
     return to?[label,to]:label;
   }).filter(Boolean);
+  const ost=document.getElementById('fOst').value.trim()||null;
   const id=name.toLowerCase().replace(/[^a-z0-9]+/g,'-')+'-'+Date.now().toString(36);
   const hue=parseInt(glow.slice(1,3),16);
   const c={id,name,arcs,rp:rpLabel(arcs),glow,quote:quote?`« ${quote.replace(/^[«"\s]+|[»"\s]+$/g,'')} »`:'',
     desc,perso,rel,fun:fun.length?fun:['Nouveau visage du multivers.'],
-    img:fImgData||null,
+    img:fImgData||null,ost,
     face:fImgData?null:{bg:'#0d2530',hair:glow,skin:'#e8c9a8',eye:'#0b1d20',mouth:'#a86e50'}};
   if(SB_ON){
     const row={id,nom:name,arcs,rp:rpLabel(arcs),glow,citation:c.quote,histoire:c.desc,
-      personnalite:c.perso,relations:c.rel,anecdotes:c.fun,img:c.img,face:c.face,statut:'attente'};
+      personnalite:c.perso,relations:c.rel,anecdotes:c.fun,img:c.img,face:c.face,ost:c.ost,statut:'attente'};
     const btn=document.getElementById('fSave');
     btn.disabled=true;btn.textContent='Envoi en cours…';
     fetch(SB_URL+'/rest/v1/personnages',{method:'POST',headers:sbHeaders,body:JSON.stringify(row)})
