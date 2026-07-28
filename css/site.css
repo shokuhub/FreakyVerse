@@ -369,7 +369,7 @@ select option{background:var(--abyss)}
 .archead .archev{font-size:1.1rem;color:var(--arc,#3fe8d8);transition:transform .4s;line-height:1}
 .archead.open .archev{transform:rotate(180deg)}
 .arcpanel{max-height:0;overflow:hidden;transition:max-height .55s cubic-bezier(.2,.7,.2,1)}
-.arcpanel .masonry,.arcpanel .empty{margin-top:1.4rem}
+.arcpanel .masonry,.arcpanel .empty,.arcpanel .cinerow{margin-top:1.4rem}
 .empty{
   border:1px dashed rgba(63,232,216,.22);border-radius:16px;padding:2.8rem 1.6rem;text-align:center;
   color:var(--dim);font-size:.9rem;line-height:1.7;background:rgba(4,20,24,.25);
