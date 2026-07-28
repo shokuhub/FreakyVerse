@@ -28,7 +28,7 @@ window.FV.CINES = {
        {t:"Reveal sélectionnés FreakyTown S1", d:"Par Shoku (Bon... c'était mes débuts)", img:"assets/cinematiques/B4F3655E-A130-4C4C-BEB4-013991FE285F.png", badge:"Ancien", yt:"https://www.youtube.com/watch?v=afuRCkDtnhg"}
       ],
     ft2:[
-      {t:"Flashback Shoku", d:"par Shoku", img:"assets/cinematiques/passeshoku.png", badge:"2026", yt:"https://www.youtube.com/watch?v=oga8H3KqTPU"},
+      {t:"Flashback Shoku", d:"par Shoku", img:"assets/cinematiques/passéshoku.png", badge:"2026", yt:"https://www.youtube.com/watch?v=oga8H3KqTPU"},
       {t:"FreakyTown, Fin.", d:"par Shoku", img:"assets/cinematiques/finfk2.png", badge:"2026", yt:"https://www.youtube.com/watch?v=QTAmvGs7dM0" },
       {t:"Sélectionnés FreakyTown S2", d:"par Shoku", img:"assets/cinematiques/reveals2.png", badge:"2025", yt:"https://www.youtube.com/watch?v=ICrP0DjQlno"},
       {t:"Trailer FreakyTown S2", d:"par Shoku", img:"assets/cinematiques/trailers2.png", badge:"2025", yt:"https://www.youtube.com/watch?v=afuRCkDtnhg"}
