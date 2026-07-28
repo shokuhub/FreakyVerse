@@ -146,7 +146,7 @@ const SB_ON=!!(SB_URL&&SB_KEY);
 const sbHeaders={apikey:SB_KEY,Authorization:'Bearer '+SB_KEY,'Content-Type':'application/json'};
 function rowToChar(r){return{id:r.id,name:r.nom,rp:r.rp||'',arcs:r.arcs||[],glow:r.glow||'#3fe8d8',
   quote:r.citation||'',desc:r.histoire||'',perso:r.personnalite||'',rel:r.relations||[],
-  fun:r.anecdotes||[],img:r.img||null,face:r.face||null,ost:r.ost||null};}
+  fun:r.anecdotes||[],img:r.img||null,face:r.face||null,ost:r.ost||null,links:r.liens||[]};}
 async function loadShared(){
   if(!SB_ON)return;
   try{
@@ -257,6 +257,7 @@ function formIsDirty(){
   if(ids.some(id=>document.getElementById(id).value.trim()))return true;
   if([...document.querySelectorAll('#fArcs input:checked')].length)return true;
   if([...document.querySelectorAll('#fRels .relrow input')].some(i=>i.value.trim()))return true;
+  if([...document.querySelectorAll('#fLinks .linkrow input')].some(i=>i.value.trim()))return true;
   if(fImgData)return true;
   return false;
 }
@@ -420,7 +421,10 @@ function showChar(c){
     <div class="ovsec"><h4>Relations</h4>${relHtml}</div>
     <div class="ovsec"><h4>Anecdotes</h4>
       <ul class="funlist">${c.fun.map(f=>`<li>${f}</li>`).join('')}</ul>
-    </div>`;
+    </div>
+    ${(c.links&&c.links.length)?`<div class="ovsec"><h4>Liens</h4>
+      <div class="chips">${c.links.map(l=>`<a class="chip link" href="${l.url}" target="_blank" rel="noopener">${l.titre} ↗</a>`).join('')}</div>
+    </div>`:''}`;
   document.getElementById('charSheet').scrollTop=0;
   openOv('charSheet');
   const vid=ytId(c.ost);
@@ -487,6 +491,16 @@ function relRow(){
 }
 document.getElementById('fAddRel').addEventListener('click',()=>document.getElementById('fRels').appendChild(relRow()));
 
+function linkRow(){
+  const d=document.createElement('div');d.className='linkrow';
+  d.innerHTML=`<input placeholder="Titre du lien (ex : Panel Pinterest)">
+    <input placeholder="https://…">
+    <button type="button" title="Retirer">✕</button>`;
+  d.querySelector('button').addEventListener('click',()=>d.remove());
+  return d;
+}
+document.getElementById('fAddLink').addEventListener('click',()=>document.getElementById('fLinks').appendChild(linkRow()));
+
 let fImgData=null;
 document.getElementById('fImg').addEventListener('change',e=>{
   const f=e.target.files[0]; if(!f)return;
@@ -505,6 +519,7 @@ function openForm(){
   document.getElementById('fColor').value='#3fe8d8';
   document.querySelectorAll('#fArcs input').forEach(i=>i.checked=false);
   const rels=document.getElementById('fRels');rels.innerHTML='';rels.appendChild(relRow());
+  const lks=document.getElementById('fLinks');lks.innerHTML='';lks.appendChild(linkRow());
   openOv('charForm');
 }
 
@@ -527,15 +542,20 @@ document.getElementById('fSave').addEventListener('click',()=>{
     return to?[label,to]:label;
   }).filter(Boolean);
   const ost=document.getElementById('fOst').value.trim()||null;
+  const links=[...document.querySelectorAll('#fLinks .linkrow')].map(r=>{
+    const inputs=r.querySelectorAll('input');
+    const titre=inputs[0].value.trim(), url=inputs[1].value.trim();
+    return (titre&&url)?{titre,url}:null;
+  }).filter(Boolean);
   const id=name.toLowerCase().replace(/[^a-z0-9]+/g,'-')+'-'+Date.now().toString(36);
   const hue=parseInt(glow.slice(1,3),16);
   const c={id,name,arcs,rp:rpLabel(arcs),glow,quote:quote?`« ${quote.replace(/^[«"\s]+|[»"\s]+$/g,'')} »`:'',
     desc,perso,rel,fun:fun.length?fun:['Nouveau visage du multivers.'],
-    img:fImgData||null,ost,
+    img:fImgData||null,ost,links,
     face:fImgData?null:{bg:'#0d2530',hair:glow,skin:'#e8c9a8',eye:'#0b1d20',mouth:'#a86e50'}};
   if(SB_ON){
     const row={id,nom:name,arcs,rp:rpLabel(arcs),glow,citation:c.quote,histoire:c.desc,
-      personnalite:c.perso,relations:c.rel,anecdotes:c.fun,img:c.img,face:c.face,ost:c.ost,statut:'attente'};
+      personnalite:c.perso,relations:c.rel,anecdotes:c.fun,img:c.img,face:c.face,ost:c.ost,liens:c.links,statut:'attente'};
     const btn=document.getElementById('fSave');
     btn.disabled=true;btn.textContent='Envoi en cours…';
     fetch(SB_URL+'/rest/v1/personnages',{method:'POST',headers:sbHeaders,body:JSON.stringify(row)})
