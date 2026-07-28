@@ -30,7 +30,9 @@ function resize(){W2=cv.width=innerWidth;H2=cv.height=innerHeight;
 }
 addEventListener('resize',resize);resize();
 let lastTick=0;
+let skyRunning=true;   /* mis en pause quand l'onglet n'est pas visible, ou quand le hero est scrollé hors champ */
 function tick(t){
+  if(!skyRunning){ requestAnimationFrame(tick); return; }
   /* on limite le redessin à ~30 images/seconde : suffisant pour un effet doux,
      et ça évite de faire recalculer en continu le flou du menu au-dessus, à chaque frame de l'écran */
   if(t-lastTick<33){ if(!reduced) requestAnimationFrame(tick); return; }
@@ -58,9 +60,23 @@ function tick(t){
     if(shoot.l>260)shoot=null;
   }
   cx.globalAlpha=1;
-  if(!reduced) requestAnimationFrame(tick);
+  requestAnimationFrame(tick);
 }
-if(!reduced) requestAnimationFrame(tick); else tick(0);
+requestAnimationFrame(tick);
+
+/* pause complète quand l'onglet n'est pas actif (économise le CPU en arrière-plan) */
+document.addEventListener('visibilitychange',()=>{ skyRunning=!document.hidden && !reduced; });
+skyRunning=!document.hidden && !reduced;
+
+/* pause le fond animé (et les cristaux/étincelles du hero) dès qu'on a scrollé loin du haut de la page —
+   inutile de faire tourner ces animations quand elles ne sont plus du tout visibles à l'écran */
+const heroObs=new IntersectionObserver(entries=>{
+  const visible=entries[0].isIntersecting;
+  skyRunning=visible && !document.hidden && !reduced;
+  document.getElementById('heroScene')?.classList.toggle('paused',!visible);
+},{threshold:0});
+const heroEl=document.getElementById('hero');
+if(heroEl)heroObs.observe(heroEl);
 
 /* mouse parallax on fog + hero art — throttlé à une fois par frame, via quickTo (bien moins coûteux que gsap.to répété) */
 if(!reduced){
