@@ -24,7 +24,7 @@ window.FV.ARCS = [
 ];
 /* Contenus par arc — cinématiques : {t:"Titre", d:"Type · Durée", img:"url", badge:"Badge"} ; galerie : {img:"url", cap:"Légende"} */
 window.FV.CINES = { 
-    ft1:[{t:"Reveal sélectionnés FreakyTown S1", d:"Par Shoku (c'était mes débuts ^^)", img:"assets/cinematiques/B4F3655E-A130-4C4C-BEB4-013991FE285F.png", badge:"Ancien", yt:"https://www.youtube.com/watch?v=afuRCkDtnhg"}
+    ft1:[{t:"Reveal sélectionnés FreakyTown S1", d:"Par Shoku (Bon... c'était mes débuts)", img:"assets/cinematiques/B4F3655E-A130-4C4C-BEB4-013991FE285F.png", badge:"Ancien", yt:"https://www.youtube.com/watch?v=afuRCkDtnhg"}
       ], ft2:[], circus:[] };
 window.FV.GALLERY = {
     ft1:[
