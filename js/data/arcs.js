@@ -30,8 +30,8 @@ window.FV.CINES = {
     ft2:[
       {t:"FreakyTown, Fin.", d:"par Shoku", img:"assets/cinematiques/finfk2.png", badge:"2026", yt:"https://www.youtube.com/watch?v=QTAmvGs7dM0" },
       {t:"Flashback Shoku", d:"par Shoku", img:"assets/cinematiques/passéshoku.png", badge:"2026", yt:"https://www.youtube.com/watch?v=oga8H3KqTPU"},
-      {t:"Sélectionnés FreakyTown S2", d:"par Shoku", img:"assets/cinematiques/reveals2.png", badge:"2025", yt:"https://www.youtube.com/watch?v=ICrP0DjQlno"},
-      {t:"Trailer FreakyTown S2", d:"par Shoku", img:"assets/cinematiques/trailers2.png", badge:"2025", yt:"https://www.youtube.com/watch?v=afuRCkDtnhg"}
+      {t:"Sélectionnés FreakyTown S2", d:"par Shoku", img:"assets/cinematiques/reveals2.png", badge:"2025", yt:"https://www.youtube.com/watch?v=Hp7uFr0F9Rg"},
+      {t:"Trailer FreakyTown S2", d:"par Shoku", img:"assets/cinematiques/trailers2.png", badge:"2025", yt:"https://www.youtube.com/watch?v=ICrP0DjQlno"}
        
     ], circus:[] };
 window.FV.GALLERY = {
