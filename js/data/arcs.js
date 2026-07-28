@@ -42,8 +42,8 @@ window.FV.GALLERY = {
       {img:"assets/galerie/olivia.jpg", titre:"Thomas", artiste:"Rob"}
     ],
     ft2:[
-      {img:"assets/galerie/Thaliaprimaisaac.png", titre:"La secte (Thalia, Prima et Isaac)", artiste:"ziad_btw (instagram)"},
-      {img:"assets/galerie/shokudragon.png", titre:"Shoku et Dragon", artiste:"Ziad_btw (instagram)"},       
+      {img:"assets/galerie/commission shoku secte.png", titre:"La secte (Thalia, Prima et Isaac)", artiste:"ziad_btw (instagram)"},
+      {img:"assets/galerie/shokudragon (1).png", titre:"Shoku et Dragon", artiste:"Ziad_btw (instagram)"},       
       {img:"assets/galerie/rob.png", titre:"Rob", artiste:"Rob"},
       {img:"assets/galerie/nanamizombie.png", titre:"Nanami", artiste:"DocVar3n"},
       {img:"assets/galerie/igor.png", titre:"Igor", artiste:"Aurélie"},
