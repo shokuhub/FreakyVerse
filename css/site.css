@@ -474,6 +474,7 @@ button.chip{background:none;cursor:pointer}
 #charSheet img.face{width:230px}
 .lead p+p{margin-top:.95rem}
 .hrp{color:var(--dim);font-style:italic;border-left:2px solid rgba(63,232,216,.25);padding-left:1rem;font-size:.92em}
+.lead b,.lead strong,.funlist b,.funlist strong,blockquote b,blockquote strong{font-weight:700;color:var(--white)}
 .funlist{list-style:none;display:flex;flex-direction:column;gap:.9rem}
 .funlist li{color:var(--mist);font-size:.92rem;line-height:1.6;padding-left:1.6rem;position:relative}
 .funlist li::before{content:'✦';position:absolute;left:0;color:var(--accent);text-shadow:0 0 10px var(--accent)}
