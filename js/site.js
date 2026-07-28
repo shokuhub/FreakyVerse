@@ -193,7 +193,7 @@ function renderChars(){
 renderChars();
 loadShared();
 
-/* cinématiques par arc */
+/* cinématiques par arc : accordéon — un clic sur un arc déplie ses affiches */
 document.getElementById('cineArcs').innerHTML=ARCS.map(a=>{
   const items=CINES[a.id]||[];
   const body=items.length
@@ -204,8 +204,33 @@ document.getElementById('cineArcs').innerHTML=ARCS.map(a=>{
           <div class="cmeta"><div class="ct">${c.t}</div><div class="cd">${c.d}</div></div>
         </div>`).join('')}</div>`
     : `<div class="empty"><b>Prochainement</b>Les cinématiques de cet arc seront bientôt projetées ici.</div>`;
-  return `<div class="archead" style="--arc:${a.color}"><span class="dot"></span>${a.name}</div>${body}`;
+  const count = items.length ? `${items.length} cinématique${items.length>1?'s':''}` : 'à venir';
+  return `<button class="archead" style="--arc:${a.color}" data-arc="${a.id}">
+      <span class="dot"></span><span class="arcname">${a.name}</span>
+      <span class="arccount">${count}</span><span class="archev">⌄</span>
+    </button>
+    <div class="arcpanel" id="cinePanel-${a.id}">${body}</div>`;
 }).join('');
+
+/* accordéon cinématiques : un seul arc ouvert à la fois */
+document.querySelectorAll('#cineArcs .archead').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    const panel=document.getElementById('cinePanel-'+btn.dataset.arc);
+    const isOpen=btn.classList.contains('open');
+    document.querySelectorAll('#cineArcs .archead.open').forEach(b=>{
+      b.classList.remove('open');
+      document.getElementById('cinePanel-'+b.dataset.arc).style.maxHeight='0px';
+    });
+    if(!isOpen){
+      btn.classList.add('open');
+      panel.style.maxHeight=panel.scrollHeight+'px';
+      panel.querySelectorAll('img,div.cine').forEach(()=>{});
+      const imgs=panel.querySelectorAll('.cine');
+      /* recalcule la hauteur une fois les images de fond chargées */
+      setTimeout(()=>{ if(btn.classList.contains('open'))panel.style.maxHeight=panel.scrollHeight+'px'; },300);
+    }
+  });
+});
 
 /* légende d'une image de galerie : {titre, artiste} (nouveau) ou {cap} (ancien format) */
 function capOf(g){
