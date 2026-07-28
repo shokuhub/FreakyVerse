@@ -4,7 +4,7 @@
    Ne modifiez ce fichier que pour changer le comportement du site.
    ============================================================ */
 const FV=window.FV;
-const ARCS=FV.ARCS, CINES=FV.CINES, GALLERY=FV.GALLERY, CHARS=FV.CHARS, WORLDS=FV.WORLDS, PASS=FV.PASS;
+const ARCS=FV.ARCS, CINES=FV.CINES, GALLERY=FV.GALLERY, CHARS=FV.CHARS, WORLDS=FV.WORLDS, PASS_HASH=FV.PASS_HASH;
 function pixelFace(p){
   return `<svg class="face" viewBox="0 0 8 8" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges">
   <rect width="8" height="8" fill="${p.bg}"/>
@@ -495,9 +495,14 @@ function showLightbox(src,title,sub){
 /* ================= AJOUT DE PERSONNAGE ================= */
 document.getElementById('pwOk').addEventListener('click',checkPw);
 document.getElementById('pwInput').addEventListener('keydown',e=>{if(e.key==='Enter')checkPw()});
-function checkPw(){
+async function sha256Hex(str){
+  const buf=await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+  return [...new Uint8Array(buf)].map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+async function checkPw(){
   const v=document.getElementById('pwInput').value.trim();
-  if(v===PASS){
+  const h=await sha256Hex(v);
+  if(h===PASS_HASH){
     closeOv('pwGate'); openForm();
   }else{
     const box=document.getElementById('pwBox');
@@ -528,12 +533,22 @@ function linkRow(){
   return d;
 }
 document.getElementById('fAddLink').addEventListener('click',()=>document.getElementById('fLinks').appendChild(linkRow()));
-let fImgData=null;
+let fImgData=null, fImgPending=false;
 document.getElementById('fImg').addEventListener('change',e=>{
   const f=e.target.files[0]; if(!f)return;
   if(f.size>2.5*1024*1024){document.getElementById('fErr').textContent='Image trop lourde (max 2,5 Mo)';e.target.value='';return}
+  const saveBtn=document.getElementById('fSave');
+  fImgPending=true; saveBtn.disabled=true; saveBtn.textContent="Chargement de l'image…";
   const r=new FileReader();
-  r.onload=()=>{fImgData=r.result;const p=document.getElementById('fImgPrev');p.src=fImgData;p.style.display='block'};
+  r.onload=()=>{
+    fImgData=r.result;
+    const p=document.getElementById('fImgPrev');p.src=fImgData;p.style.display='block';
+    fImgPending=false; saveBtn.disabled=false; saveBtn.textContent='Enregistrer mon personnage';
+  };
+  r.onerror=()=>{
+    fImgPending=false; saveBtn.disabled=false; saveBtn.textContent='Enregistrer mon personnage';
+    document.getElementById('fErr').textContent="Erreur de lecture de l'image, réessayez";
+  };
   r.readAsDataURL(f);
 });
 function openForm(){
@@ -552,6 +567,7 @@ document.getElementById('fSave').addEventListener('click',()=>{
   const name=document.getElementById('fName').value.trim();
   const arcs=[...document.querySelectorAll('#fArcs input:checked')].map(i=>i.value);
   const err=document.getElementById('fErr');
+  if(fImgPending){err.textContent="Patientez, l'image est encore en cours de traitement…";return}
   if(!name){err.textContent='Le nom est obligatoire';return}
   if(!arcs.length){err.textContent='Choisissez au moins un univers';return}
   err.textContent='';
@@ -710,14 +726,19 @@ function setSnd(v){
   sndTip.classList.remove('show');
 }
 sndBtn.addEventListener('click',()=>setSnd(!SND.on));
-let wantSound=false;
-try{wantSound=localStorage.getItem('fv_sound')==='1'}catch(e){}
-if(wantSound){
-  const arm=()=>{setSnd(true);removeEventListener('pointerdown',arm);removeEventListener('keydown',arm);};
+/* Ambiance activée par défaut, dès le premier geste (clic/touche) — sauf si la
+   personne l'a explicitement coupée lors d'une visite précédente (mémorisé). */
+let soundPref=null;
+try{soundPref=localStorage.getItem('fv_sound')}catch(e){}
+if(soundPref!=='0'){
+  const arm=()=>{
+    setSnd(true);
+    sndTip.textContent='Ambiance activée — cliquez ici pour la couper';
+    sndTip.classList.add('show');
+    setTimeout(()=>sndTip.classList.remove('show'),3600);
+    removeEventListener('pointerdown',arm);removeEventListener('keydown',arm);
+  };
   addEventListener('pointerdown',arm);addEventListener('keydown',arm);
-}else{
-  setTimeout(()=>{if(!SND.on)sndTip.classList.add('show')},4600);
-  setTimeout(()=>sndTip.classList.remove('show'),11000);
 }
 let lastHover=0;
 document.addEventListener('pointerover',e=>{
