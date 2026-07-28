@@ -4,7 +4,7 @@
 window.FV = window.FV || {};
 
 /* Mot de passe pour créer un personnage (bouton +) */
-window.FV.PASS = 'smvladz';   // ← À CHANGER !
+window.FV.PASS = 'smnvladz';   // ← À CHANGER !
 
 /* Base de données partagée (Supabase) — les personnages soumis
    arrivent en "attente" et apparaissent une fois passés en "valide" */
