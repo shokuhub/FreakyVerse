@@ -243,6 +243,9 @@ h2{
 }
 #chargrid:hover .char:not(:hover):not(.ghost){opacity:.32;filter:saturate(.4) brightness(.6);transform:scale(.96)}
 .char.add{border-style:dashed;border-color:rgba(63,232,216,.3);background:rgba(4,20,24,.3);justify-content:center}
+.char.add.ghostedit{border-color:rgba(255,255,255,.16)}
+.char.add.ghostedit .plus{color:var(--mist);text-shadow:none;font-size:2.4rem}
+.char.add.ghostedit:hover{border-color:rgba(255,255,255,.35);box-shadow:0 0 30px rgba(255,255,255,.08)}
 .char.add:hover{border-color:var(--glow);box-shadow:0 0 40px rgba(63,232,216,.15);transform:scale(1.03)}
 .char.add .plus{font-family:'Unbounded',sans-serif;font-size:3.4rem;font-weight:300;color:var(--glow);text-shadow:0 0 28px rgba(63,232,216,.5);transition:.4s;margin-top:-18%}
 .char.add:hover .plus{transform:rotate(90deg) scale(1.1)}
