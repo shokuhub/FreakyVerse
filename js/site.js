@@ -726,35 +726,24 @@ function setSnd(v){
   sndTip.classList.remove('show');
 }
 sndBtn.addEventListener('click',()=>setSnd(!SND.on));
-/* Ambiance activée par défaut, dès le tout premier geste détecté — clic, touche,
-   appui tactile ou simple scroll — sauf si la personne l'a explicitement coupée
-   lors d'une visite précédente (mémorisé). Les navigateurs interdisent tout son
-   avant un geste réel : on élargit donc au maximum les gestes surveillés pour
-   capter la toute première interaction, quelle qu'elle soit. */
+sndTip.addEventListener('click',()=>{ if(sndTip.classList.contains('invite')) setSnd(true); });
+/* Les navigateurs interdisent tout son avant un geste explicite du visiteur —
+   impossible à contourner. On mise donc sur un bouton bien visible qui invite
+   clairement à cliquer, plutôt que d'essayer de deviner un geste discret. */
 let soundPref=null;
 try{soundPref=localStorage.getItem('fv_sound')}catch(e){}
 if(soundPref!=='0'){
-  const GESTES=['pointerdown','keydown','touchend','wheel'];
-  let armed=false;
-  const arm=()=>{
-    if(armed)return; armed=true;
-    SND.enable();
-    /* on confirme seulement une fois le son réellement démarré (le navigateur
-       peut mettre l'AudioContext en pause juste après sa création) */
-    const confirmOn=()=>{
-      if(!SND.on)return;
-      sndBtn.classList.add('on');
-      sndBtn.setAttribute('aria-label','Couper le son');
-      try{localStorage.setItem('fv_sound','1')}catch(e){}
-      sndTip.textContent='Ambiance activée — cliquez ici pour la couper';
-      sndTip.classList.add('show');
-      setTimeout(()=>sndTip.classList.remove('show'),3600);
-    };
-    setTimeout(confirmOn,120);
-    GESTES.forEach(ev=>removeEventListener(ev,arm));
-  };
-  GESTES.forEach(ev=>addEventListener(ev,arm,{passive:true}));
+  sndBtn.classList.add('invite');
+  sndTip.classList.add('invite');
+  sndTip.textContent='🔊 Activer l\'ambiance sonore';
+  setTimeout(()=>sndTip.classList.add('show'), 1400);
 }
+const origSetSnd=setSnd;
+setSnd=function(v){
+  origSetSnd(v);
+  sndBtn.classList.remove('invite');
+  sndTip.classList.remove('invite');
+};
 let lastHover=0;
 document.addEventListener('pointerover',e=>{
   if(!SND.on)return;
