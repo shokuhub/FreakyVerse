@@ -212,12 +212,38 @@ function renderChars(){
       <div class="cname">Ajouter son personnage</div>
       <div class="cfac">Réservé aux joueurs</div>
     </div>
+  </div>
+  <div class="char add ghostedit" id="editChar">
+    <div class="plus">✎</div>
+    <div class="meta">
+      <div class="cname">Modifier mon personnage</div>
+      <div class="cfac">Avec votre code d'édition</div>
+    </div>
   </div>`;
   document.getElementById('addChar').addEventListener('click',()=>{
     document.getElementById('pwErr').textContent='';
     document.getElementById('pwInput').value='';
     openOv('pwGate');
     setTimeout(()=>document.getElementById('pwInput').focus(),150);
+  });
+  document.getElementById('editChar').addEventListener('click',()=>{
+    document.getElementById('editErr').textContent='';
+    document.getElementById('editId').value='';
+    document.getElementById('editCode').value='';
+    const mine=myChars();
+    const quick=document.getElementById('editQuick');
+    if(mine.length){
+      quick.style.display='block';
+      quick.innerHTML=`<div class="hint" style="margin-bottom:.6rem">Personnages créés sur cet appareil :</div>
+        <div class="chips">${mine.map(m=>`<button type="button" class="chip" data-quick-id="${m.id}" data-quick-code="${m.code}">${m.name}</button>`).join('')}</div>`;
+      quick.querySelectorAll('[data-quick-id]').forEach(b=>b.addEventListener('click',()=>{
+        document.getElementById('editId').value=b.dataset.quickId;
+        document.getElementById('editCode').value=b.dataset.quickCode;
+      }));
+    }else{
+      quick.style.display='none'; quick.innerHTML='';
+    }
+    openOv('editGate');
   });
 }
 renderChars();
@@ -551,7 +577,49 @@ document.getElementById('fImg').addEventListener('change',e=>{
   };
   r.readAsDataURL(f);
 });
+/* ---- gestion des identifiants d'édition (pas de vrais comptes : un code secret par fiche) ---- */
+const MYCHARS_KEY='fv_my_chars';
+function myChars(){try{return JSON.parse(localStorage.getItem(MYCHARS_KEY)||'[]')}catch(e){return []}}
+function saveMyChar(id,name,code){
+  const list=myChars(); list.push({id,name,code});
+  try{localStorage.setItem(MYCHARS_KEY, JSON.stringify(list))}catch(e){}
+}
+function randomEditCode(){
+  const bytes=crypto.getRandomValues(new Uint8Array(9));
+  return [...bytes].map(b=>b.toString(36)).join('').slice(0,12);
+}
+
+let editMode=null; /* null = création ; sinon {id, code} = modification en cours */
+
+function fillForm(data){
+  document.getElementById('fName').value=data.name||'';
+  document.getElementById('fQuote').value=(data.quote||'').replace(/^[«"\s]+|[»"\s]+$/g,'');
+  const tmp=document.createElement('div'); tmp.innerHTML=data.desc||'';
+  document.getElementById('fDesc').value=[...tmp.querySelectorAll('p')].map(p=>p.innerHTML.replace(/<br\s*\/?>/g,'\n')).join('\n\n')||tmp.textContent||'';
+  document.getElementById('fPerso').value=data.perso||'';
+  document.getElementById('fFun').value=(data.fun||[]).join('\n');
+  document.getElementById('fOst').value=data.ost||'';
+  document.getElementById('fColor').value=data.glow||'#3fe8d8';
+  document.querySelectorAll('#fArcs input').forEach(i=>i.checked=(data.arcs||[]).includes(i.value));
+  const rels=document.getElementById('fRels'); rels.innerHTML='';
+  (data.rel&&data.rel.length ? data.rel : [null]).forEach(r=>{
+    const row=relRow(); rels.appendChild(row);
+    if(r){
+      const inputs=row.querySelectorAll('input,select');
+      if(Array.isArray(r)){ row.querySelector('input').value=r[0]; row.querySelector('select').value=r[1]||''; }
+      else{ row.querySelector('input').value=r; }
+    }
+  });
+  const lks=document.getElementById('fLinks'); lks.innerHTML='';
+  (data.links&&data.links.length ? data.links : [null]).forEach(l=>{
+    const row=linkRow(); lks.appendChild(row);
+    if(l){ const inputs=row.querySelectorAll('input'); inputs[0].value=l.titre||''; inputs[1].value=l.url||''; }
+  });
+  if(data.img){ fImgData=data.img; const p=document.getElementById('fImgPrev'); p.src=data.img; p.style.display='block'; }
+}
+
 function openForm(){
+  editMode=null;
   fImgData=null;
   document.getElementById('fErr').textContent='';
   document.getElementById('fImgPrev').style.display='none';
@@ -561,8 +629,28 @@ function openForm(){
   document.querySelectorAll('#fArcs input').forEach(i=>i.checked=false);
   const rels=document.getElementById('fRels');rels.innerHTML='';rels.appendChild(relRow());
   const lks=document.getElementById('fLinks');lks.innerHTML='';lks.appendChild(linkRow());
+  document.querySelector('#charForm h2').innerHTML='Rejoindre le <em style="font-style:normal;color:var(--glow)">multivers</em>';
+  document.getElementById('fSave').textContent='Enregistrer mon personnage';
   openOv('charForm');
 }
+
+function openEditForm(row, code){
+  editMode={id:row.id, code};
+  fImgData=null;
+  document.getElementById('fErr').textContent='';
+  document.getElementById('fImgPrev').style.display='none';
+  document.getElementById('fImg').value='';
+  fillForm({
+    name:row.nom, quote:row.citation, desc:row.histoire, perso:row.personnalite,
+    fun:row.anecdotes, ost:row.ost, glow:row.glow, arcs:row.arcs,
+    rel:row.relations, links:row.liens, img:row.img
+  });
+  document.querySelector('#charForm h2').innerHTML=`Modifier <em style="font-style:normal;color:var(--glow)">${row.nom}</em>`;
+  document.getElementById('fSave').textContent='Enregistrer les modifications';
+  closeOv('editGate');
+  openOv('charForm');
+}
+
 document.getElementById('fSave').addEventListener('click',()=>{
   const name=document.getElementById('fName').value.trim();
   const arcs=[...document.querySelectorAll('#fArcs input:checked')].map(i=>i.value);
@@ -588,19 +676,65 @@ document.getElementById('fSave').addEventListener('click',()=>{
     const titre=inputs[0].value.trim(), url=inputs[1].value.trim();
     return (titre&&url)?{titre,url}:null;
   }).filter(Boolean);
+  const finalQuote=quote?`« ${quote.replace(/^[«"\s]+|[»"\s]+$/g,'')} »`:'';
+
+  if(editMode){
+    /* ---- MODIFICATION D'UNE FICHE EXISTANTE ---- */
+    const row={nom:name,arcs,rp:rpLabel(arcs),glow,citation:finalQuote,histoire:desc,
+      personnalite:perso,relations:rel,anecdotes:fun,img:fImgData||null,ost,liens:links,statut:'attente'};
+    const btn=document.getElementById('fSave');
+    btn.disabled=true;btn.textContent='Envoi en cours…';
+    fetch(SB_URL+'/rest/v1/personnages?id=eq.'+encodeURIComponent(editMode.id),{
+      method:'PATCH',
+      headers:{...sbHeaders,'x-edit-code':editMode.code,'Prefer':'return=minimal'},
+      body:JSON.stringify(row)
+    }).then(r=>{
+        if(!r.ok)throw new Error(r.status);
+        closeOv('charForm');
+        document.getElementById('sentOkTitle').textContent='Modifications envoyées ✦';
+        document.getElementById('sentOkMsg').textContent="Vos changements repasseront par une validation rapide avant de réapparaître publiquement.";
+        document.getElementById('sentOkCreds').style.display='none';
+        openOv('sentOk');
+      })
+      .catch(()=>{err.textContent="Échec de l'envoi — vérifiez votre identifiant, votre code, ou votre connexion";})
+      .finally(()=>{btn.disabled=false;btn.textContent='Enregistrer les modifications';editMode=null;});
+    return;
+  }
+
+  /* ---- CRÉATION D'UNE NOUVELLE FICHE ---- */
   const id=name.toLowerCase().replace(/[^a-z0-9]+/g,'-')+'-'+Date.now().toString(36);
-  const hue=parseInt(glow.slice(1,3),16);
-  const c={id,name,arcs,rp:rpLabel(arcs),glow,quote:quote?`« ${quote.replace(/^[«"\s]+|[»"\s]+$/g,'')} »`:'',
+  const editCode=randomEditCode();
+  const c={id,name,arcs,rp:rpLabel(arcs),glow,quote:finalQuote,
     desc,perso,rel,fun:fun.length?fun:['Nouveau visage du multivers.'],
     img:fImgData||null,ost,links,
     face:fImgData?null:{bg:'#0d2530',hair:glow,skin:'#e8c9a8',eye:'#0b1d20',mouth:'#a86e50'}};
   if(SB_ON){
     const row={id,nom:name,arcs,rp:rpLabel(arcs),glow,citation:c.quote,histoire:c.desc,
-      personnalite:c.perso,relations:c.rel,anecdotes:c.fun,img:c.img,face:c.face,ost:c.ost,liens:c.links,statut:'attente'};
+      personnalite:c.perso,relations:c.rel,anecdotes:c.fun,img:c.img,face:c.face,ost:c.ost,liens:c.links,
+      edit_code:editCode,statut:'attente'};
     const btn=document.getElementById('fSave');
     btn.disabled=true;btn.textContent='Envoi en cours…';
     fetch(SB_URL+'/rest/v1/personnages',{method:'POST',headers:sbHeaders,body:JSON.stringify(row)})
-      .then(r=>{if(!r.ok)throw new Error(r.status);closeOv('charForm');openOv('sentOk');})
+      .then(r=>{
+        if(!r.ok)throw new Error(r.status);
+        saveMyChar(id,name,editCode);
+        closeOv('charForm');
+        document.getElementById('sentOkTitle').textContent='Personnage envoyé ✦';
+        document.getElementById('sentOkMsg').textContent='Votre fiche a bien été transmise. Après validation par un administrateur, votre personnage apparaîtra dans la galerie du multivers — pour tout le monde.';
+        const credsBox=document.getElementById('sentOkCreds');
+        credsBox.style.display='block';
+        credsBox.innerHTML=`
+          <div class="hint" style="margin-top:1.2rem;color:#ff7a8a;font-weight:500">⚠ Notez bien ceci, il ne sera plus jamais réaffiché :</div>
+          <div style="background:rgba(0,0,0,.3);border-radius:10px;padding:.9rem;margin-top:.6rem;font-family:'Space Mono',monospace;font-size:.78rem;line-height:1.9;text-align:left">
+            Identifiant : <b>${id}</b><br>Code d'édition : <b>${editCode}</b>
+          </div>
+          <button class="addbtn" id="copyCreds" style="margin-top:.7rem;width:100%">Copier ces informations</button>`;
+        document.getElementById('copyCreds').addEventListener('click',()=>{
+          navigator.clipboard.writeText(`Identifiant : ${id}\nCode d'édition : ${editCode}`).catch(()=>{});
+          document.getElementById('copyCreds').textContent='Copié ✓';
+        });
+        openOv('sentOk');
+      })
       .catch(()=>{err.textContent="Échec de l'envoi — vérifiez votre connexion et réessayez";})
       .finally(()=>{btn.disabled=false;btn.textContent='Enregistrer mon personnage';});
   }else{
@@ -609,6 +743,30 @@ document.getElementById('fSave').addEventListener('click',()=>{
     renderChars();
     closeOv('charForm');
     showChar(c);
+  }
+});
+
+/* ---- ouverture de la porte "Modifier mon personnage" ---- */
+document.getElementById('editGo').addEventListener('click',async ()=>{
+  const id=document.getElementById('editId').value.trim();
+  const code=document.getElementById('editCode').value.trim();
+  const eerr=document.getElementById('editErr');
+  if(!id||!code){eerr.textContent='Remplissez les deux champs';return}
+  eerr.textContent='';
+  const btn=document.getElementById('editGo');
+  btn.disabled=true;btn.textContent='Recherche…';
+  try{
+    const res=await fetch(SB_URL+'/rest/v1/personnages?id=eq.'+encodeURIComponent(id)+'&select=*',{
+      headers:{...sbHeaders,'x-edit-code':code}
+    });
+    if(!res.ok)throw new Error(res.status);
+    const rows=await res.json();
+    if(!rows.length){eerr.textContent='Identifiant ou code incorrect';return}
+    openEditForm(rows[0], code);
+  }catch(e){
+    eerr.textContent='Identifiant ou code incorrect';
+  }finally{
+    btn.disabled=false;btn.textContent='Retrouver ma fiche';
   }
 });
 /* ================= SOUND DESIGN (Web Audio, 100% procédural) ================= */
