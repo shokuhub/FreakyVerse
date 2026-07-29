@@ -10,7 +10,7 @@ window.FV = window.FV || {};
    qui ouvre "Inspecter" sur le site ne voit qu'une suite de lettres
    et chiffres illisible, pas le vrai mot de passe.
 
-   MOT DE PASSE ACTUEL : C_Bi-vpoK0Uo
+   MOT DE PASSE ACTUEL : 
    (à communiquer sur le Discord — changez-le dès que vous voulez
    via la méthode ci-dessous)
 
