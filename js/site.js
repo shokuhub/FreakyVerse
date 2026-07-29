@@ -195,9 +195,8 @@ function loadSaved(){try{return JSON.parse(localStorage.getItem(STORE)||'[]')}ca
 function persist(list){try{localStorage.setItem(STORE,JSON.stringify(list))}catch(e){memStore=list}}
 let SAVED=SB_ON?[]:loadSaved();
 CHARS.push(...SAVED);
-function renderChars(){
-  cg.innerHTML=CHARS.map((c,i)=>`
-  <div class="char" style="--cg:${c.glow}" data-char="${i}">
+function charCard(c,i){
+  return `<div class="char" style="--cg:${c.glow}" data-char="${i}">
     <div class="halo"></div>
     ${visual(c)}
     <div class="meta">
@@ -205,19 +204,32 @@ function renderChars(){
       <div class="cfac">${c.rp}</div>
       <div class="cquote">${c.quote||''}</div>
     </div>
-  </div>`).join('')+`
-  <div class="char add" id="addChar">
-    <div class="plus">+</div>
-    <div class="meta">
-      <div class="cname">Ajouter son personnage</div>
-      <div class="cfac">Réservé aux joueurs</div>
+  </div>`;
+}
+function renderChars(){
+  const byArc = ARCS.map(a=>{
+    const list = CHARS.map((c,i)=>({c,i})).filter(({c})=>(c.arcs||[]).includes(a.id));
+    const body = list.length
+      ? `<div class="chargrid-arc">${list.map(({c,i})=>charCard(c,i)).join('')}</div>`
+      : `<div class="empty"><b>À venir</b>Les premiers personnages de cet arc arriveront bientôt.</div>`;
+    return `<div class="charArcHead" style="--arc:${a.color}"><span class="dot"></span>${a.name}</div>${body}`;
+  }).join('');
+  cg.innerHTML = byArc + `
+  <div class="charArcHead" style="--arc:#8ba1a3"><span class="dot"></span>Rejoindre le multivers</div>
+  <div class="chargrid-arc">
+    <div class="char add" id="addChar">
+      <div class="plus">+</div>
+      <div class="meta">
+        <div class="cname">Ajouter son personnage</div>
+        <div class="cfac">Réservé aux joueurs</div>
+      </div>
     </div>
-  </div>
-  <div class="char add ghostedit" id="editChar">
-    <div class="plus">✎</div>
-    <div class="meta">
-      <div class="cname">Modifier mon personnage</div>
-      <div class="cfac">Avec votre code d'édition</div>
+    <div class="char add ghostedit" id="editChar">
+      <div class="plus">✎</div>
+      <div class="meta">
+        <div class="cname">Modifier mon personnage</div>
+        <div class="cfac">Avec votre code d'édition</div>
+      </div>
     </div>
   </div>`;
   document.getElementById('addChar').addEventListener('click',()=>{
