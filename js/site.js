@@ -726,19 +726,34 @@ function setSnd(v){
   sndTip.classList.remove('show');
 }
 sndBtn.addEventListener('click',()=>setSnd(!SND.on));
-/* Ambiance activée par défaut, dès le premier geste (clic/touche) — sauf si la
-   personne l'a explicitement coupée lors d'une visite précédente (mémorisé). */
+/* Ambiance activée par défaut, dès le tout premier geste détecté — clic, touche,
+   appui tactile ou simple scroll — sauf si la personne l'a explicitement coupée
+   lors d'une visite précédente (mémorisé). Les navigateurs interdisent tout son
+   avant un geste réel : on élargit donc au maximum les gestes surveillés pour
+   capter la toute première interaction, quelle qu'elle soit. */
 let soundPref=null;
 try{soundPref=localStorage.getItem('fv_sound')}catch(e){}
 if(soundPref!=='0'){
+  const GESTES=['pointerdown','keydown','touchend','wheel'];
+  let armed=false;
   const arm=()=>{
-    setSnd(true);
-    sndTip.textContent='Ambiance activée — cliquez ici pour la couper';
-    sndTip.classList.add('show');
-    setTimeout(()=>sndTip.classList.remove('show'),3600);
-    removeEventListener('pointerdown',arm);removeEventListener('keydown',arm);
+    if(armed)return; armed=true;
+    SND.enable();
+    /* on confirme seulement une fois le son réellement démarré (le navigateur
+       peut mettre l'AudioContext en pause juste après sa création) */
+    const confirmOn=()=>{
+      if(!SND.on)return;
+      sndBtn.classList.add('on');
+      sndBtn.setAttribute('aria-label','Couper le son');
+      try{localStorage.setItem('fv_sound','1')}catch(e){}
+      sndTip.textContent='Ambiance activée — cliquez ici pour la couper';
+      sndTip.classList.add('show');
+      setTimeout(()=>sndTip.classList.remove('show'),3600);
+    };
+    setTimeout(confirmOn,120);
+    GESTES.forEach(ev=>removeEventListener(ev,arm));
   };
-  addEventListener('pointerdown',arm);addEventListener('keydown',arm);
+  GESTES.forEach(ev=>addEventListener(ev,arm,{passive:true}));
 }
 let lastHover=0;
 document.addEventListener('pointerover',e=>{
