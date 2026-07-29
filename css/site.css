@@ -229,10 +229,15 @@ h2{
 @keyframes ringspin{from{transform:rotateX(68deg) rotateZ(0)}to{transform:rotateX(68deg) rotateZ(360deg)}}
 
 /* ---------- personnages ---------- */
-#chargrid{
-  display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));
-  gap:1.1rem;margin-top:3rem;
+#chargrid{margin-top:2rem}
+.charArcHead{
+  display:flex;align-items:center;gap:1.1rem;margin:3rem 0 1.4rem;
+  font-family:'Space Mono',monospace;font-size:.74rem;letter-spacing:.32em;text-transform:uppercase;color:var(--white);
 }
+#chargrid .charArcHead:first-child{margin-top:0}
+.charArcHead::after{content:'';flex:1;height:1px;background:linear-gradient(90deg,var(--arc,#3fe8d8),transparent)}
+.charArcHead .dot{width:9px;height:9px;border-radius:50%;background:var(--arc,#3fe8d8);box-shadow:0 0 12px var(--arc,#3fe8d8);flex-shrink:0}
+.chargrid-arc{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:1.1rem}
 .char{
   position:relative;border-radius:16px;overflow:hidden;cursor:pointer;
   border:1px solid var(--line);
