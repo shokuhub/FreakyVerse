@@ -242,10 +242,25 @@
 <!-- CONFIRMATION D'ENVOI -->
 <div class="overlay" id="sentOk">
   <button class="ovclose" data-close="sentOk">✕</button>
-  <div class="ovpanel"><div class="pwbox">
-    <h3>Personnage envoyé ✦</h3>
-    <p>Votre fiche a bien été transmise. Après validation par un administrateur, votre personnage apparaîtra dans la galerie du multivers — pour tout le monde.</p>
-    <button class="btn solid" data-close="sentOk" style="width:100%" onclick="closeOv('sentOk')">Compris</button>
+  <div class="ovpanel"><div class="pwbox" id="sentOkBox">
+    <h3 id="sentOkTitle">Personnage envoyé ✦</h3>
+    <p id="sentOkMsg">Votre fiche a bien été transmise. Après validation par un administrateur, votre personnage apparaîtra dans la galerie du multivers — pour tout le monde.</p>
+    <div id="sentOkCreds" style="display:none"></div>
+    <button class="btn solid" data-close="sentOk" style="width:100%;margin-top:1rem" onclick="closeOv('sentOk')">Compris</button>
+  </div></div>
+</div>
+
+<!-- RECHERCHE POUR MODIFIER UNE FICHE -->
+<div class="overlay" id="editGate">
+  <button class="ovclose" data-close="editGate">✕</button>
+  <div class="ovpanel"><div class="pwbox" id="editBox" style="width:min(420px,92vw)">
+    <h3>Modifier mon personnage</h3>
+    <p>Entrez l'identifiant de votre fiche et son code d'édition — les deux vous ont été donnés au moment de la création.</p>
+    <div id="editQuick" style="display:none;margin:1rem 0"></div>
+    <div class="field" style="text-align:left"><label>Identifiant de la fiche</label><input id="editId" placeholder="ex : shoku-abc123"></div>
+    <div class="field" style="text-align:left"><label>Code d'édition</label><input id="editCode" placeholder="Votre code secret…"></div>
+    <div class="pwerr" id="editErr"></div>
+    <button class="btn solid" id="editGo" style="margin-top:.6rem;width:100%">Retrouver ma fiche</button>
   </div></div>
 </div>
 <!-- LIGHTBOX -->
