@@ -699,17 +699,19 @@ document.getElementById('fSave').addEventListener('click',()=>{
     btn.disabled=true;btn.textContent='Envoi en cours…';
     fetch(SB_URL+'/rest/v1/personnages?id=eq.'+encodeURIComponent(editMode.id),{
       method:'PATCH',
-      headers:{...sbHeaders,'x-edit-code':editMode.code,'Prefer':'return=minimal'},
+      headers:{...sbHeaders,'x-edit-code':editMode.code,'Prefer':'return=representation'},
       body:JSON.stringify(row)
-    }).then(r=>{
+    }).then(async r=>{
         if(!r.ok)throw new Error(r.status);
+        const updated=await r.json();
+        if(!updated.length) throw new Error('no-row-matched'); /* la requête a réussi mais aucune ligne n'a changé : code incorrect */
         closeOv('charForm');
         document.getElementById('sentOkTitle').textContent='Modifications envoyées ✦';
         document.getElementById('sentOkMsg').textContent="Vos modifications sont en ligne dès maintenant.";
         document.getElementById('sentOkCreds').style.display='none';
         openOv('sentOk');
       })
-      .catch(()=>{err.textContent="Échec de l'envoi — vérifiez votre identifiant, votre code, ou votre connexion";})
+      .catch(()=>{err.textContent="Échec de l'envoi — identifiant ou code d'édition incorrect";})
       .finally(()=>{btn.disabled=false;btn.textContent='Enregistrer les modifications';editMode=null;});
     return;
   }
