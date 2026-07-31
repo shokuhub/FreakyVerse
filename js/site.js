@@ -693,7 +693,7 @@ document.getElementById('fSave').addEventListener('click',()=>{
   if(editMode){
     /* ---- MODIFICATION D'UNE FICHE EXISTANTE ---- */
     const row={nom:name,arcs,rp:rpLabel(arcs),glow,citation:finalQuote,histoire:desc,
-      personnalite:perso,relations:rel,anecdotes:fun,img:fImgData||null,ost,liens:links,statut:'attente'};
+      personnalite:perso,relations:rel,anecdotes:fun,img:fImgData||null,ost,liens:links};
     const btn=document.getElementById('fSave');
     btn.disabled=true;btn.textContent='Envoi en cours…';
     fetch(SB_URL+'/rest/v1/personnages?id=eq.'+encodeURIComponent(editMode.id),{
@@ -704,7 +704,7 @@ document.getElementById('fSave').addEventListener('click',()=>{
         if(!r.ok)throw new Error(r.status);
         closeOv('charForm');
         document.getElementById('sentOkTitle').textContent='Modifications envoyées ✦';
-        document.getElementById('sentOkMsg').textContent="Vos changements repasseront par une validation rapide avant de réapparaître publiquement.";
+        document.getElementById('sentOkMsg').textContent="Vos modifications sont en ligne dès maintenant.";
         document.getElementById('sentOkCreds').style.display='none';
         openOv('sentOk');
       })
