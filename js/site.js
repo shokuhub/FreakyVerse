@@ -510,6 +510,7 @@ function showChar(c){
 }
 cg.addEventListener('click',e=>{
   const el=e.target.closest('.char'); if(!el)return;
+  if(el.dataset.char===undefined)return; /* cartes "Ajouter" / "Modifier" : gérées par leurs propres écouteurs */
   showChar(CHARS[+el.dataset.char]);
 });
 document.getElementById('charPanel').addEventListener('click',e=>{
