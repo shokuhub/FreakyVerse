@@ -692,19 +692,19 @@ document.getElementById('fSave').addEventListener('click',()=>{
   const finalQuote=quote?`« ${quote.replace(/^[«"\s]+|[»"\s]+$/g,'')} »`:'';
 
   if(editMode){
-    /* ---- MODIFICATION D'UNE FICHE EXISTANTE ---- */
+    /* ---- MODIFICATION D'UNE FICHE EXISTANTE (via fonction RPC, plus fiable qu'un en-tête HTTP) ---- */
     const row={nom:name,arcs,rp:rpLabel(arcs),glow,citation:finalQuote,histoire:desc,
       personnalite:perso,relations:rel,anecdotes:fun,img:fImgData||null,ost,liens:links};
     const btn=document.getElementById('fSave');
     btn.disabled=true;btn.textContent='Envoi en cours…';
-    fetch(SB_URL+'/rest/v1/personnages?id=eq.'+encodeURIComponent(editMode.id),{
-      method:'PATCH',
-      headers:{...sbHeaders,'x-edit-code':editMode.code,'Prefer':'return=representation'},
-      body:JSON.stringify(row)
+    fetch(SB_URL+'/rest/v1/rpc/update_personnage',{
+      method:'POST',
+      headers:sbHeaders,
+      body:JSON.stringify({p_id:editMode.id, p_code:editMode.code, p_data:row})
     }).then(async r=>{
         if(!r.ok)throw new Error(r.status);
         const updated=await r.json();
-        if(!updated.length) throw new Error('no-row-matched'); /* la requête a réussi mais aucune ligne n'a changé : code incorrect */
+        if(!updated.length) throw new Error('no-row-matched');
         closeOv('charForm');
         document.getElementById('sentOkTitle').textContent='Modifications envoyées ✦';
         document.getElementById('sentOkMsg').textContent="Vos modifications sont en ligne dès maintenant.";
@@ -771,8 +771,9 @@ document.getElementById('editGo').addEventListener('click',async ()=>{
   const btn=document.getElementById('editGo');
   btn.disabled=true;btn.textContent='Recherche…';
   try{
-    const res=await fetch(SB_URL+'/rest/v1/personnages?id=eq.'+encodeURIComponent(id)+'&select=*',{
-      headers:{...sbHeaders,'x-edit-code':code}
+    const res=await fetch(SB_URL+'/rest/v1/rpc/get_personnage_for_edit',{
+      method:'POST', headers:sbHeaders,
+      body:JSON.stringify({p_id:id, p_code:code})
     });
     if(!res.ok)throw new Error(res.status);
     const rows=await res.json();
