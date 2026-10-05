@@ -5,6 +5,11 @@
    ============================================================ */
 const FV=window.FV;
 const ARCS=FV.ARCS, CINES=FV.CINES, GALLERY=FV.GALLERY, CHARS=FV.CHARS, WORLDS=FV.WORLDS, PASS_HASH=FV.PASS_HASH;
+/* Mantes-la-Jolie est intégrée d'office : la faille reste cliquable même si les fichiers de données n'ont pas été modifiés */
+if(!ARCS.some(a=>a.id==='mantes')) ARCS.push({id:'mantes',name:'Mantes-la-Jolie',color:'#ffb347'});
+if(!WORLDS.mantes) WORLDS.mantes={accent:"#ffb347",soon:true,eyebrow:"Arc 4 · Nouvelle faille",title:"Mantes-la-<em>Jolie</em>",
+  tag:"Une nouvelle faille s'ouvre.",desc:"Une nouvelle faille vient de s'ouvrir dans le ciel du multivers. Ce qu'elle cache reste à découvrir.",tl:[],chars:[],codex:[],gal:[]};
+let pendingArc=null;   /* arc à cocher d'office quand on crée un perso depuis la page d'une faille */
 function pixelFace(p){
   return `<svg class="face" viewBox="0 0 8 8" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges">
   <rect width="8" height="8" fill="${p.bg}"/>
@@ -245,6 +250,7 @@ function renderChars(){
     </div>
   </div>`;
   document.getElementById('addChar').addEventListener('click',()=>{
+    pendingArc=null;
     document.getElementById('pwErr').textContent='';
     document.getElementById('pwInput').value='';
     openOv('pwGate');
@@ -409,11 +415,19 @@ document.querySelectorAll('.world').forEach(w=>w.addEventListener('click',()=>{
   curWorld=w.dataset.world;
   document.documentElement.style.setProperty('--accent',d.accent);
   if(d.soon){
+    const wc=CHARS.filter(c=>(c.arcs||[]).includes(w.dataset.world));
+    const soonBox=(t)=>`<div class="ovsec"><h4>${t}</h4><div class="empty"><b>Coming soon</b>Cette section sera bientôt remplie.</div></div>`;
     document.getElementById('worldPanel').innerHTML=`
       <div class="eyebrow">${d.eyebrow}</div>
       <h2>${d.title}</h2>
       <p class="lead" style="font-size:1.15rem;color:var(--white);font-weight:400">${d.tag}</p>
-      <div class="empty" style="margin-top:3rem"><b>Coming soon</b>Les portes de ce monde ne sont pas encore ouvertes. Son histoire sera révélée prochainement…</div>`;
+      <div class="lead" style="margin-top:1.2rem">${lore(d.desc)}</div>
+      <div class="ovsec"><h4>Personnages</h4>
+        ${wc.length?`<div class="chips">${wc.map(c=>`<button class="chip link" data-char-id="${c.id}">${c.name} ↗</button>`).join('')}</div>`
+          :`<p class="lead" style="font-style:italic;color:var(--dim)">Aucun habitant pour l'instant — soyez le premier à franchir la faille.</p>`}
+        <button class="btn solid" id="worldAddChar" data-arc="${w.dataset.world}" style="margin-top:1.4rem">+ Ajouter mon personnage à cette faille</button>
+      </div>
+      ${soonBox('Chronologie')}${soonBox('Archives')}${soonBox('Cinématiques')}${soonBox('Galerie du monde')}`;
     openOv('worldOverlay');
     return;
   }
@@ -453,6 +467,16 @@ document.querySelectorAll('.world').forEach(w=>w.addEventListener('click',()=>{
   openOv('worldOverlay');
 }));
 document.getElementById('worldPanel').addEventListener('click',e=>{
+  const addBtn=e.target.closest('#worldAddChar');
+  if(addBtn){
+    pendingArc=addBtn.dataset.arc;
+    closeOv('worldOverlay');
+    document.getElementById('pwErr').textContent='';
+    document.getElementById('pwInput').value='';
+    openOv('pwGate');
+    setTimeout(()=>document.getElementById('pwInput').focus(),150);
+    return;
+  }
   if(e.target.closest('[data-goto-chars]')){
     closeOv('worldOverlay');
     document.getElementById('personnages').scrollIntoView({behavior:'smooth'});
@@ -665,6 +689,7 @@ function openForm(){
   document.querySelectorAll('#fArcs input').forEach(i=>i.checked=false);
   const rels=document.getElementById('fRels');rels.innerHTML='';rels.appendChild(relRow());
   const lks=document.getElementById('fLinks');lks.innerHTML='';lks.appendChild(linkRow());
+  if(pendingArc){ document.querySelectorAll('#fArcs input').forEach(i=>{ if(i.value===pendingArc) i.checked=true; }); pendingArc=null; }
   document.querySelector('#charForm h2').innerHTML='Rejoindre le <em style="font-style:normal;color:var(--glow)">multivers</em>';
   document.getElementById('fSave').textContent='Enregistrer mon personnage';
   openOv('charForm');
@@ -889,39 +914,78 @@ const SND=(()=>{
     src.connect(f);f.connect(g);g.connect(master);g.connect(verb);
     src.start(now);
   }
-  /* ---- FAILLE : une déchirure dangereuse (bruit qui se déchire + impact grave + tritons qui grincent) ---- */
+  /* ---- FAILLE TEMPORELLE : arcs électriques, grésillement de néon qui flanche, rembobinage du temps, claquement final ---- */
   let lastRift=0;
+  function riftNoise(dur,fn){
+    const sr=ctx.sampleRate, len=Math.floor(sr*dur), buf=ctx.createBuffer(1,len,sr), d=buf.getChannelData(0);
+    for(let i=0;i<len;i++) d[i]=(Math.random()*2-1)*fn(i/len);
+    const src=ctx.createBufferSource(); src.buffer=buf; return src;
+  }
   function rift(){
     if(!on)return;
-    const t=performance.now(); if(t-lastRift<1400)return; lastRift=t;
-    const now=ctx.currentTime, sr=ctx.sampleRate, dur=1.15;
-    /* 1. la déchirure : bruit haché, avec des craquements, dont la fréquence monte */
-    const len=Math.floor(sr*dur), nb=ctx.createBuffer(1,len,sr), d=nb.getChannelData(0);
-    for(let i=0;i<len;i++){
-      const env=Math.min(1,i/(sr*.05))*Math.pow(1-i/len,1.5);
-      const crack=Math.random()<.05?1.9:1;
-      d[i]=(Math.random()*2-1)*env*crack*(.55+.45*Math.sin(i/sr*42));
+    const t=performance.now(); if(t-lastRift<1500)return; lastRift=t;
+    const now=ctx.currentTime;
+    /* saturation pour un son sec et agressif */
+    const ws=ctx.createWaveShaper(), curve=new Float32Array(512);
+    for(let i=0;i<512;i++){const x=i/256-1; curve[i]=Math.tanh(x*5);}
+    ws.curve=curve; ws.connect(master);
+    const wsv=ctx.createGain(); wsv.gain.value=.5; ws.connect(wsv); wsv.connect(verb);
+
+    /* 1. rembobinage : souffle inversé qui monte en crescendo (le temps qu'on remonte) puis se coupe net */
+    const rew=riftNoise(.95,x=>Math.pow(x,2.2));
+    const hp=ctx.createBiquadFilter(); hp.type='highpass'; hp.Q.value=3;
+    hp.frequency.setValueAtTime(400,now); hp.frequency.exponentialRampToValueAtTime(7000,now+.95);
+    const rg=ctx.createGain(); rg.gain.setValueAtTime(.22,now); rg.gain.setValueAtTime(.0001,now+.95);
+    rew.connect(hp); hp.connect(rg); rg.connect(master); rg.connect(verb); rew.start(now);
+
+    /* 2. grésillement : un néon / un transformateur à 100 Hz qui flanche (gain haché au hasard) */
+    const hum=[ctx.createOscillator(),ctx.createOscillator()], hg=ctx.createGain(), hbp=ctx.createBiquadFilter();
+    hum[0].type='sawtooth'; hum[0].frequency.value=100;
+    hum[1].type='sawtooth'; hum[1].frequency.value=103.5;   /* battement = vibration électrique */
+    hbp.type='bandpass'; hbp.frequency.value=900; hbp.Q.value=1.2;
+    hg.gain.setValueAtTime(0,now);
+    for(let k=0;k<30;k++){
+      const at=now+.05+k*.032+Math.random()*.02;
+      hg.gain.setValueAtTime(Math.random()<.35?0:.05+Math.random()*.07,at);
     }
-    const src=ctx.createBufferSource(); src.buffer=nb;
-    const bp=ctx.createBiquadFilter(); bp.type='bandpass'; bp.Q.value=2.2;
-    bp.frequency.setValueAtTime(380,now); bp.frequency.exponentialRampToValueAtTime(3400,now+dur*.8);
-    const g=ctx.createGain(); g.gain.value=.3;
-    src.connect(bp); bp.connect(g); g.connect(master); g.connect(verb); src.start(now);
-    /* 2. l'impact grave qui s'effondre (court, pas un moteur) */
-    const o=ctx.createOscillator(), og=ctx.createGain(), lp=ctx.createBiquadFilter();
-    o.type='sawtooth'; o.frequency.setValueAtTime(98,now); o.frequency.exponentialRampToValueAtTime(30,now+.8);
-    lp.type='lowpass'; lp.frequency.value=230;
-    og.gain.setValueAtTime(0,now); og.gain.linearRampToValueAtTime(.15,now+.04); og.gain.exponentialRampToValueAtTime(.0001,now+.9);
-    o.connect(lp); lp.connect(og); og.connect(master); o.start(now); o.stop(now+1);
-    /* 3. deux notes en triton (l'intervalle "diabolique") qui glissent, avec un tremblement */
-    [[330,352],[466.16,440]].forEach(([f1,f2],k)=>{
-      const to=ctx.createOscillator(), tg=ctx.createGain(), lfo=ctx.createOscillator(), lg=ctx.createGain();
-      to.type='triangle'; to.frequency.setValueAtTime(f1,now); to.frequency.linearRampToValueAtTime(f2,now+1.3);
-      lfo.frequency.value=7+k*2; lg.gain.value=.012; lfo.connect(lg); lg.connect(tg.gain);
-      tg.gain.setValueAtTime(0,now+.05); tg.gain.linearRampToValueAtTime(.03,now+.35); tg.gain.exponentialRampToValueAtTime(.0001,now+1.4);
-      to.connect(tg); tg.connect(master); tg.connect(verb);
-      to.start(now); lfo.start(now); to.stop(now+1.5); lfo.stop(now+1.5);
-    });
+    hg.gain.setValueAtTime(0,now+1);
+    hum.forEach(o=>{o.connect(hbp); o.start(now); o.stop(now+1.05)});
+    hbp.connect(hg); hg.connect(ws);
+
+    /* 3. arcs électriques : des "zaps" secs (chute de hauteur ultra rapide + craquement) à intervalles irréguliers */
+    for(let z=0;z<6;z++){
+      const at=now+.08+z*.15+Math.random()*.08, len=.05+Math.random()*.07;
+      const zo=ctx.createOscillator(), zg=ctx.createGain(), zh=ctx.createBiquadFilter();
+      zo.type=Math.random()<.5?'sawtooth':'square';
+      const f0=1800+Math.random()*2800;
+      zo.frequency.setValueAtTime(f0,at); zo.frequency.exponentialRampToValueAtTime(90+Math.random()*120,at+len);
+      zh.type='highpass'; zh.frequency.value=260;
+      zg.gain.setValueAtTime(.11,at); zg.gain.exponentialRampToValueAtTime(.0001,at+len);
+      zo.connect(zh); zh.connect(zg); zg.connect(ws);
+      zo.start(at); zo.stop(at+len+.02);
+      /* petit craquement associé */
+      const ck=riftNoise(.03,x=>1-x), ckg=ctx.createGain(); ckg.gain.value=.16;
+      ck.connect(ckg); ckg.connect(ws); ck.start(at);
+    }
+
+    /* 4. fil de tension : sinus aigu qui plonge avec un vibrato rapide (distorsion du temps) */
+    const w=ctx.createOscillator(), wg=ctx.createGain(), lfo=ctx.createOscillator(), lg=ctx.createGain();
+    w.type='sine'; w.frequency.setValueAtTime(2100,now); w.frequency.exponentialRampToValueAtTime(140,now+.95);
+    lfo.frequency.setValueAtTime(10,now); lfo.frequency.linearRampToValueAtTime(34,now+.95); lg.gain.value=220;
+    lfo.connect(lg); lg.connect(w.frequency);
+    wg.gain.setValueAtTime(0,now); wg.gain.linearRampToValueAtTime(.035,now+.1); wg.gain.exponentialRampToValueAtTime(.0001,now+1);
+    w.connect(wg); wg.connect(master); wg.connect(verb);
+    w.start(now); lfo.start(now); w.stop(now+1.05); lfo.stop(now+1.05);
+
+    /* 5. claquement final : le temps se referme (craquement sec + choc sourd) */
+    const snapAt=now+.95;
+    const sn=riftNoise(.06,x=>Math.pow(1-x,2)), sbp=ctx.createBiquadFilter(), sg=ctx.createGain();
+    sbp.type='bandpass'; sbp.frequency.value=2200; sbp.Q.value=.8; sg.gain.value=.45;
+    sn.connect(sbp); sbp.connect(sg); sg.connect(ws); sn.start(snapAt);
+    const th=ctx.createOscillator(), thg=ctx.createGain();
+    th.type='sine'; th.frequency.setValueAtTime(95,snapAt); th.frequency.exponentialRampToValueAtTime(38,snapAt+.35);
+    thg.gain.setValueAtTime(.2,snapAt); thg.gain.exponentialRampToValueAtTime(.0001,snapAt+.4);
+    th.connect(thg); thg.connect(master); th.start(snapAt); th.stop(snapAt+.45);
   }
   /* ---- FAILLE SCELLÉE : choc sourd + cliquetis de chaînes ---- */
   let lastSeal=0;
