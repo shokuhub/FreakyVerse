@@ -152,23 +152,35 @@ gsap.registerPlugin(ScrollTrigger);
 if(!reduced){
   gsap.to('#heroScene',{yPercent:14,ease:'none',scrollTrigger:{trigger:'#hero',start:'top top',end:'bottom top',scrub:true}});
 }
-/* ================= CONSTELLATION LINES ================= */
+/* ================= FRACTURES ENTRE LES FAILLES ================= */
+function crackPath(x1,y1,x2,y2,seed){
+  const n=9, dx=x2-x1, dy=y2-y1, len=Math.hypot(dx,dy)||1, nx=-dy/len, ny=dx/len;
+  let d=`M${x1.toFixed(1)},${y1.toFixed(1)}`;
+  for(let i=1;i<n;i++){
+    const t=i/n, r=Math.sin(seed*12.9898+i*78.233)*43758.5453, j=((r-Math.floor(r))-.5)*38;
+    d+=` L${(x1+dx*t+nx*j).toFixed(1)},${(y1+dy*t+ny*j).toFixed(1)}`;
+  }
+  return d+` L${x2.toFixed(1)},${y2.toFixed(1)}`;
+}
 function drawConstellation(){
   const svg=document.getElementById('constellation');
   if(innerWidth<961){svg.innerHTML='';return}
   const cos=document.getElementById('cosmos').getBoundingClientRect();
-  const pts=[...document.querySelectorAll('.world .orb')].map(o=>{
+  const pts=[...document.querySelectorAll('.world .rift')].map(o=>{
     const r=o.getBoundingClientRect();
     return [r.left+r.width/2-cos.left, r.top+r.height/2-cos.top];
   });
   svg.setAttribute('viewBox',`0 0 ${cos.width} ${cos.height}`);
   let h='';
   for(let i=0;i<pts.length-1;i++)
-    h+=`<line x1="${pts[i][0]}" y1="${pts[i][1]}" x2="${pts[i+1][0]}" y2="${pts[i+1][1]}"/>`;
+    h+=`<path d="${crackPath(pts[i][0],pts[i][1],pts[i+1][0],pts[i+1][1],i+1)}"/>`;
   svg.innerHTML=h;
 }
+/* le décor des failles ne tourne que quand on le voit (économise le processeur) */
+new IntersectionObserver(es=>document.getElementById('cosmos').classList.toggle('paused',!es[0].isIntersecting),{rootMargin:'120px'}).observe(document.getElementById('cosmos'));
 addEventListener('resize',drawConstellation);
 setTimeout(drawConstellation,600);
+addEventListener('load',drawConstellation);
 /* ================= BUILD SECTIONS ================= */
 const cg=document.getElementById('chargrid');
 const visual=c=>c.img?`<img class="face" src="${c.img}" alt="${c.name}">`:pixelFace(c.face);
@@ -380,9 +392,19 @@ document.querySelectorAll('.world').forEach(w=>{
     });
   }
 });
+function riftFlash(w,color){
+  if(reduced)return;
+  const r=w.querySelector('.rift').getBoundingClientRect();
+  const f=document.createElement('div'); f.className='riftflash';
+  f.style.setProperty('--fx',(r.left+r.width/2)+'px');
+  f.style.setProperty('--fy',(r.top+r.height/2)+'px');
+  f.style.setProperty('--fc',color);
+  document.body.appendChild(f); setTimeout(()=>f.remove(),900);
+}
 document.querySelectorAll('.world').forEach(w=>w.addEventListener('click',()=>{
   const d=WORLDS[w.dataset.world];
   if(!d)return;
+  riftFlash(w,d.accent);
   curWorld=w.dataset.world;
   document.documentElement.style.setProperty('--accent',d.accent);
   if(d.soon){
