@@ -375,6 +375,7 @@ function showCodex(entry){
 const PEEK_FALLBACK={
   ft1:`<svg class="face" viewBox="0 0 8 8" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges"><rect width="8" height="8" fill="#20343a"/><rect x="1" y="1" width="6" height="3" fill="#0e6e64"/><rect x="1" y="4" width="6" height="3" fill="#e8c9a8"/><rect x="2" y="4" width="1" height="1" fill="#0b1d20"/><rect x="5" y="4" width="1" height="1" fill="#0b1d20"/><rect x="3" y="6" width="2" height="1" fill="#a86e50"/></svg>`,
   ft2:`<svg class="face" viewBox="0 0 8 8" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges"><rect width="8" height="8" fill="#141a2e"/><rect x="1" y="1" width="6" height="3" fill="#2d3f77"/><rect x="1" y="4" width="6" height="3" fill="#d9b8ff"/><rect x="2" y="4" width="1" height="1" fill="#0b0f20"/><rect x="5" y="4" width="1" height="1" fill="#0b0f20"/><rect x="2" y="6" width="4" height="1" fill="#6a4b9e"/></svg>`,
+  mantes:`<svg class="face" viewBox="0 0 8 8" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges"><rect width="8" height="8" fill="#2e2210"/><rect x="1" y="1" width="6" height="3" fill="#b8741f"/><rect x="1" y="4" width="6" height="3" fill="#e8c9a8"/><rect x="2" y="4" width="1" height="1" fill="#1d1408"/><rect x="5" y="4" width="1" height="1" fill="#1d1408"/><rect x="3" y="6" width="2" height="1" fill="#a86e50"/></svg>`,
   circus:`<svg class="face" viewBox="0 0 8 8" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges"><rect width="8" height="8" fill="#301212"/><rect x="1" y="1" width="6" height="2" fill="#ff6b6b"/><rect x="1" y="3" width="6" height="4" fill="#f3f3f3"/><rect x="2" y="4" width="1" height="1" fill="#7a1414"/><rect x="5" y="4" width="1" height="1" fill="#7a1414"/><rect x="3" y="6" width="2" height="1" fill="#e0475b"/></svg>`
 };
 document.querySelectorAll('.world').forEach(w=>{
@@ -571,7 +572,7 @@ async function checkPw(){
     box.classList.remove('err'); void box.offsetWidth; box.classList.add('err');
   }
 }
-const ARC_SHORT={ft1:'FreakyTown S1',ft2:'FreakyTown S2',circus:'Digital Circus'};
+const ARC_SHORT={ft1:'FreakyTown S1',ft2:'FreakyTown S2',circus:'Digital Circus',mantes:'Mantes-la-Jolie'};
 function rpLabel(arcs){
   if(arcs.length===2&&arcs.includes('ft1')&&arcs.includes('ft2'))return 'FreakyTown — Saisons 1 & 2';
   return arcs.map(a=>ARC_SHORT[a]).join(' · ');
@@ -888,6 +889,55 @@ const SND=(()=>{
     src.connect(f);f.connect(g);g.connect(master);g.connect(verb);
     src.start(now);
   }
+  /* ---- FAILLE : une déchirure dangereuse (bruit qui se déchire + impact grave + tritons qui grincent) ---- */
+  let lastRift=0;
+  function rift(){
+    if(!on)return;
+    const t=performance.now(); if(t-lastRift<1400)return; lastRift=t;
+    const now=ctx.currentTime, sr=ctx.sampleRate, dur=1.15;
+    /* 1. la déchirure : bruit haché, avec des craquements, dont la fréquence monte */
+    const len=Math.floor(sr*dur), nb=ctx.createBuffer(1,len,sr), d=nb.getChannelData(0);
+    for(let i=0;i<len;i++){
+      const env=Math.min(1,i/(sr*.05))*Math.pow(1-i/len,1.5);
+      const crack=Math.random()<.05?1.9:1;
+      d[i]=(Math.random()*2-1)*env*crack*(.55+.45*Math.sin(i/sr*42));
+    }
+    const src=ctx.createBufferSource(); src.buffer=nb;
+    const bp=ctx.createBiquadFilter(); bp.type='bandpass'; bp.Q.value=2.2;
+    bp.frequency.setValueAtTime(380,now); bp.frequency.exponentialRampToValueAtTime(3400,now+dur*.8);
+    const g=ctx.createGain(); g.gain.value=.3;
+    src.connect(bp); bp.connect(g); g.connect(master); g.connect(verb); src.start(now);
+    /* 2. l'impact grave qui s'effondre (court, pas un moteur) */
+    const o=ctx.createOscillator(), og=ctx.createGain(), lp=ctx.createBiquadFilter();
+    o.type='sawtooth'; o.frequency.setValueAtTime(98,now); o.frequency.exponentialRampToValueAtTime(30,now+.8);
+    lp.type='lowpass'; lp.frequency.value=230;
+    og.gain.setValueAtTime(0,now); og.gain.linearRampToValueAtTime(.15,now+.04); og.gain.exponentialRampToValueAtTime(.0001,now+.9);
+    o.connect(lp); lp.connect(og); og.connect(master); o.start(now); o.stop(now+1);
+    /* 3. deux notes en triton (l'intervalle "diabolique") qui glissent, avec un tremblement */
+    [[330,352],[466.16,440]].forEach(([f1,f2],k)=>{
+      const to=ctx.createOscillator(), tg=ctx.createGain(), lfo=ctx.createOscillator(), lg=ctx.createGain();
+      to.type='triangle'; to.frequency.setValueAtTime(f1,now); to.frequency.linearRampToValueAtTime(f2,now+1.3);
+      lfo.frequency.value=7+k*2; lg.gain.value=.012; lfo.connect(lg); lg.connect(tg.gain);
+      tg.gain.setValueAtTime(0,now+.05); tg.gain.linearRampToValueAtTime(.03,now+.35); tg.gain.exponentialRampToValueAtTime(.0001,now+1.4);
+      to.connect(tg); tg.connect(master); tg.connect(verb);
+      to.start(now); lfo.start(now); to.stop(now+1.5); lfo.stop(now+1.5);
+    });
+  }
+  /* ---- FAILLE SCELLÉE : choc sourd + cliquetis de chaînes ---- */
+  let lastSeal=0;
+  function sealed(){
+    if(!on)return;
+    const t=performance.now(); if(t-lastSeal<900)return; lastSeal=t;
+    tone(80,52,.35,.14,'sine',.5);
+    for(let i=0;i<4;i++)setTimeout(()=>{
+      if(!on)return;
+      const o=ctx.createOscillator(), g=ctx.createGain(), bp=ctx.createBiquadFilter(), n=ctx.currentTime;
+      o.type='square'; o.frequency.value=1800+Math.random()*900;
+      bp.type='bandpass'; bp.frequency.value=2400; bp.Q.value=4;
+      g.gain.setValueAtTime(.035,n); g.gain.exponentialRampToValueAtTime(.0001,n+.05);
+      o.connect(bp); bp.connect(g); g.connect(master); o.start(n); o.stop(n+.06);
+    },70+i*85+Math.random()*40);
+  }
   function sparkle(){
     const base=900+Math.random()*1400;
     tone(base,base*1.5,1.6,.028,'sine',1);
@@ -906,6 +956,7 @@ const SND=(()=>{
       master.gain.setTargetAtTime(0,ctx.currentTime,.25);
     },
     hover(){tone(520,760,.14,.045,'sine',.3)},
+    rift, sealed,
     hoverWorld(){chime(SCALE[2],.035,1.8);setTimeout(()=>chime(SCALE[5],.025,1.6),90)},
     click(){tone(340,220,.16,.06,'triangle',.4)},
     open(){whoosh(false,.5,.14);setTimeout(()=>tone(660,990,.9,.04,'sine',1),120)},
@@ -943,13 +994,14 @@ setSnd=function(v){
 let lastHover=0;
 document.addEventListener('pointerover',e=>{
   if(!SND.on)return;
-  const world=e.target.closest('.world:not(.mystery)');
+  const world=e.target.closest('.world');
   const el=e.target.closest('a,button,.char,.cine,.tile,.com,.hcard,.codexcard');
   const tgt=world||el;
   if(!tgt||tgt===e.relatedTarget||tgt.contains(e.relatedTarget))return;
   const now=performance.now();
   if(now-lastHover<70)return;lastHover=now;
-  world?SND.hoverWorld():SND.hover();
+  if(world) world.classList.contains('mystery') ? SND.sealed() : SND.rift();
+  else SND.hover();
 });
 document.addEventListener('click',e=>{
   if(!SND.on)return;
