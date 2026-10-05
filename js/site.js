@@ -914,7 +914,7 @@ const SND=(()=>{
     src.connect(f);f.connect(g);g.connect(master);g.connect(verb);
     src.start(now);
   }
-  /* ---- FAILLE TEMPORELLE : arcs électriques, grésillement de néon qui flanche, rembobinage du temps, claquement final ---- */
+  /* ---- FAILLE : un "bzzt-crac" électrique court et sec (~0,35 s) ---- */
   let lastRift=0;
   function riftNoise(dur,fn){
     const sr=ctx.sampleRate, len=Math.floor(sr*dur), buf=ctx.createBuffer(1,len,sr), d=buf.getChannelData(0);
@@ -923,69 +923,36 @@ const SND=(()=>{
   }
   function rift(){
     if(!on)return;
-    const t=performance.now(); if(t-lastRift<1500)return; lastRift=t;
+    const t=performance.now(); if(t-lastRift<900)return; lastRift=t;
     const now=ctx.currentTime;
-    /* saturation pour un son sec et agressif */
+    /* saturation : son sec et mordant */
     const ws=ctx.createWaveShaper(), curve=new Float32Array(512);
     for(let i=0;i<512;i++){const x=i/256-1; curve[i]=Math.tanh(x*5);}
     ws.curve=curve; ws.connect(master);
-    const wsv=ctx.createGain(); wsv.gain.value=.5; ws.connect(wsv); wsv.connect(verb);
+    const wsv=ctx.createGain(); wsv.gain.value=.22; ws.connect(wsv); wsv.connect(verb);
 
-    /* 1. rembobinage : souffle inversé qui monte en crescendo (le temps qu'on remonte) puis se coupe net */
-    const rew=riftNoise(.95,x=>Math.pow(x,2.2));
-    const hp=ctx.createBiquadFilter(); hp.type='highpass'; hp.Q.value=3;
-    hp.frequency.setValueAtTime(400,now); hp.frequency.exponentialRampToValueAtTime(7000,now+.95);
-    const rg=ctx.createGain(); rg.gain.setValueAtTime(.22,now); rg.gain.setValueAtTime(.0001,now+.95);
-    rew.connect(hp); hp.connect(rg); rg.connect(master); rg.connect(verb); rew.start(now);
-
-    /* 2. grésillement : un néon / un transformateur à 100 Hz qui flanche (gain haché au hasard) */
-    const hum=[ctx.createOscillator(),ctx.createOscillator()], hg=ctx.createGain(), hbp=ctx.createBiquadFilter();
-    hum[0].type='sawtooth'; hum[0].frequency.value=100;
-    hum[1].type='sawtooth'; hum[1].frequency.value=103.5;   /* battement = vibration électrique */
-    hbp.type='bandpass'; hbp.frequency.value=900; hbp.Q.value=1.2;
-    hg.gain.setValueAtTime(0,now);
-    for(let k=0;k<30;k++){
-      const at=now+.05+k*.032+Math.random()*.02;
-      hg.gain.setValueAtTime(Math.random()<.35?0:.05+Math.random()*.07,at);
-    }
-    hg.gain.setValueAtTime(0,now+1);
-    hum.forEach(o=>{o.connect(hbp); o.start(now); o.stop(now+1.05)});
-    hbp.connect(hg); hg.connect(ws);
-
-    /* 3. arcs électriques : des "zaps" secs (chute de hauteur ultra rapide + craquement) à intervalles irréguliers */
-    for(let z=0;z<6;z++){
-      const at=now+.08+z*.15+Math.random()*.08, len=.05+Math.random()*.07;
-      const zo=ctx.createOscillator(), zg=ctx.createGain(), zh=ctx.createBiquadFilter();
-      zo.type=Math.random()<.5?'sawtooth':'square';
-      const f0=1800+Math.random()*2800;
-      zo.frequency.setValueAtTime(f0,at); zo.frequency.exponentialRampToValueAtTime(90+Math.random()*120,at+len);
-      zh.type='highpass'; zh.frequency.value=260;
-      zg.gain.setValueAtTime(.11,at); zg.gain.exponentialRampToValueAtTime(.0001,at+len);
-      zo.connect(zh); zh.connect(zg); zg.connect(ws);
-      zo.start(at); zo.stop(at+len+.02);
-      /* petit craquement associé */
-      const ck=riftNoise(.03,x=>1-x), ckg=ctx.createGain(); ckg.gain.value=.16;
-      ck.connect(ckg); ckg.connect(ws); ck.start(at);
-    }
-
-    /* 4. fil de tension : sinus aigu qui plonge avec un vibrato rapide (distorsion du temps) */
-    const w=ctx.createOscillator(), wg=ctx.createGain(), lfo=ctx.createOscillator(), lg=ctx.createGain();
-    w.type='sine'; w.frequency.setValueAtTime(2100,now); w.frequency.exponentialRampToValueAtTime(140,now+.95);
-    lfo.frequency.setValueAtTime(10,now); lfo.frequency.linearRampToValueAtTime(34,now+.95); lg.gain.value=220;
-    lfo.connect(lg); lg.connect(w.frequency);
-    wg.gain.setValueAtTime(0,now); wg.gain.linearRampToValueAtTime(.035,now+.1); wg.gain.exponentialRampToValueAtTime(.0001,now+1);
-    w.connect(wg); wg.connect(master); wg.connect(verb);
-    w.start(now); lfo.start(now); w.stop(now+1.05); lfo.stop(now+1.05);
-
-    /* 5. claquement final : le temps se referme (craquement sec + choc sourd) */
-    const snapAt=now+.95;
-    const sn=riftNoise(.06,x=>Math.pow(1-x,2)), sbp=ctx.createBiquadFilter(), sg=ctx.createGain();
-    sbp.type='bandpass'; sbp.frequency.value=2200; sbp.Q.value=.8; sg.gain.value=.45;
-    sn.connect(sbp); sbp.connect(sg); sg.connect(ws); sn.start(snapAt);
+    /* 1. le choc : un coup sourd qui donne du poids */
     const th=ctx.createOscillator(), thg=ctx.createGain();
-    th.type='sine'; th.frequency.setValueAtTime(95,snapAt); th.frequency.exponentialRampToValueAtTime(38,snapAt+.35);
-    thg.gain.setValueAtTime(.2,snapAt); thg.gain.exponentialRampToValueAtTime(.0001,snapAt+.4);
-    th.connect(thg); thg.connect(master); th.start(snapAt); th.stop(snapAt+.45);
+    th.type='sine'; th.frequency.setValueAtTime(125,now); th.frequency.exponentialRampToValueAtTime(48,now+.14);
+    thg.gain.setValueAtTime(.2,now); thg.gain.exponentialRampToValueAtTime(.0001,now+.16);
+    th.connect(thg); thg.connect(master); th.start(now); th.stop(now+.2);
+
+    /* 2. deux "zaps" : la hauteur s'effondre en quelques centièmes de seconde */
+    [[0,3300,.1,.13],[.12,2400,.08,.08]].forEach(([dt,f0,len,vol])=>{
+      const at=now+dt, o=ctx.createOscillator(), g=ctx.createGain(), hp=ctx.createBiquadFilter();
+      o.type='sawtooth';
+      o.frequency.setValueAtTime(f0,at); o.frequency.exponentialRampToValueAtTime(170,at+len);
+      hp.type='highpass'; hp.frequency.value=300;
+      g.gain.setValueAtTime(vol,at); g.gain.exponentialRampToValueAtTime(.0001,at+len);
+      o.connect(hp); hp.connect(g); g.connect(ws);
+      o.start(at); o.stop(at+len+.02);
+    });
+
+    /* 3. le crépitement : des étincelles hachées qui s'éteignent vite */
+    const cr=riftNoise(.22,x=>(Math.random()<.35?1:.12)*Math.pow(1-x,1.8));
+    const chp=ctx.createBiquadFilter(); chp.type='highpass'; chp.frequency.value=2200;
+    const cg=ctx.createGain(); cg.gain.value=.4;
+    cr.connect(chp); chp.connect(cg); cg.connect(ws); cr.start(now+.02);
   }
   /* ---- FAILLE SCELLÉE : choc sourd + cliquetis de chaînes ---- */
   let lastSeal=0;
