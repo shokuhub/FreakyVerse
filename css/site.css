@@ -166,37 +166,106 @@ h2{
 .hcard h3{font-family:'Unbounded',sans-serif;font-weight:400;font-size:1rem;margin-bottom:.5rem}
 .hcard p{color:var(--dim);font-size:.86rem;line-height:1.6}
 
-/* ---------- carte céleste ---------- */
+/* ---------- les failles (univers) ---------- */
 #univers{min-height:110vh}
-#cosmos{position:relative;margin-top:2rem;min-height:88vh}
+#cosmos{position:relative;margin-top:2rem;min-height:960px}
+#cosmos.paused *{animation-play-state:paused!important}
 #constellation{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;overflow:visible}
-#constellation line{stroke:rgba(63,232,216,.16);stroke-width:1;stroke-dasharray:3 7}
+#constellation path{fill:none;stroke:rgba(63,232,216,.2);stroke-width:1;stroke-linejoin:bevel}
+@keyframes orbfloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-12px)}}
+
 .world{
   position:absolute;width:min(300px,74vw);cursor:pointer;
   display:flex;flex-direction:column;align-items:center;text-align:center;
   transition:transform .5s cubic-bezier(.2,.7,.2,1);
 }
-.world .orbwrap{position:relative;width:170px;height:170px;display:grid;place-items:center}
+.world:hover{transform:scale(1.04);z-index:5}
+
+.riftwrap{position:relative;width:180px;height:250px}
+.rift{position:absolute;inset:0;
+  /* formes de la faille : repos (--cl) et ouverte (--op) — même nombre de points pour animer la transition */
+}
+.rift-a{
+  --cl:polygon(50% 0,45% 14%,49% 30%,44% 46%,48% 60%,46% 75%,49% 88%,50% 100%,50% 100%,53% 88%,50% 75%,56% 60%,51% 46%,55% 30%,52% 14%,50% 0);
+  --op:polygon(50% 0,28% 14%,38% 30%,18% 46%,34% 60%,22% 75%,38% 88%,50% 100%,50% 100%,62% 88%,78% 75%,64% 60%,84% 46%,66% 30%,76% 14%,50% 0);
+}
+.rift-b{
+  --cl:polygon(56% 0,53% 14%,52% 30%,48% 46%,49% 60%,45% 75%,44% 88%,42% 100%,42% 100%,47% 88%,49% 75%,54% 60%,53% 46%,57% 30%,58% 14%,56% 0);
+  --op:polygon(56% 0,36% 14%,34% 30%,16% 46%,28% 60%,20% 75%,30% 88%,42% 100%,42% 100%,56% 88%,72% 75%,70% 60%,86% 46%,76% 30%,80% 14%,56% 0);
+}
+.rift-c{
+  --cl:polygon(44% 0,40% 14%,46% 30%,43% 46%,49% 60%,50% 75%,52% 88%,56% 100%,56% 100%,58% 88%,56% 75%,58% 60%,53% 46%,51% 30%,49% 14%,44% 0);
+  --op:polygon(44% 0,26% 14%,32% 30%,20% 46%,36% 60%,30% 75%,40% 88%,56% 100%,56% 100%,66% 88%,80% 75%,70% 60%,88% 46%,62% 30%,72% 14%,44% 0);
+}
+.rift-d{
+  --cl:polygon(50% 0,48% 14%,50% 30%,47% 46%,50% 60%,48% 75%,50% 88%,50% 100%,50% 100%,52% 88%,50% 75%,53% 60%,50% 46%,52% 30%,50% 14%,50% 0);
+  --op:polygon(50% 0,45% 14%,48% 30%,44% 46%,48% 60%,45% 75%,48% 88%,50% 100%,50% 100%,53% 88%,51% 75%,55% 60%,52% 46%,54% 30%,53% 14%,50% 0);
+}
+
+/* lueur derrière la faille */
+.rift-aura{
+  position:absolute;left:50%;top:50%;width:230%;height:96%;transform:translate(-50%,-50%);
+  background:radial-gradient(ellipse at center,color-mix(in srgb,var(--wglow) 50%,transparent) 0,transparent 62%);
+  filter:blur(18px);opacity:.55;transition:opacity .6s,transform .8s;
+  animation:riftBreath 6s ease-in-out infinite;animation-delay:var(--d,0s);
+}
+@keyframes riftBreath{0%,100%{opacity:.4;transform:translate(-50%,-50%) scale(1)}50%{opacity:.8;transform:translate(-50%,-50%) scale(1.1)}}
+.world:hover .rift-aura{opacity:1;animation-play-state:paused;transform:translate(-50%,-50%) scale(1.3)}
+
+/* bord lumineux (même forme, légèrement élargie) */
+.rift-rim{
+  position:absolute;inset:0;clip-path:var(--cl);transform:scale(1.22,1.015);
+  background:linear-gradient(180deg,#fff 0,var(--wglow) 45%,#fff 100%);
+  filter:blur(1px);transition:clip-path .75s cubic-bezier(.2,.8,.2,1);
+  animation:riftFlicker 4.5s steps(1) infinite;animation-delay:var(--d,0s);
+}
+@keyframes riftFlicker{0%,100%{opacity:1}46%{opacity:1}48%{opacity:.55}50%{opacity:1}83%{opacity:.8}85%{opacity:1}}
+.world:hover .rift-rim{clip-path:var(--op)}
+
+/* l'intérieur : l'autre monde entrevu */
+.rift-void{
+  position:absolute;inset:0;clip-path:var(--cl);overflow:hidden;
+  background:
+    radial-gradient(ellipse 80% 38% at 50% 88%,color-mix(in srgb,var(--wglow) 85%,#fff) 0,transparent 72%),
+    linear-gradient(180deg,color-mix(in srgb,var(--wglow) 30%,#020a0c) 0,#03090b 48%,color-mix(in srgb,var(--wglow) 60%,#03090b) 100%);
+  transition:clip-path .75s cubic-bezier(.2,.8,.2,1);
+}
+.world:hover .rift-void{clip-path:var(--op)}
+.rift-scene{position:absolute;left:0;bottom:0;width:100%;height:58%;transform:translateY(8px);transition:transform .75s cubic-bezier(.2,.8,.2,1)}
+.world:hover .rift-scene{transform:none}
+.streak{
+  position:absolute;bottom:-60%;width:2px;height:60%;left:30%;
+  background:linear-gradient(transparent,color-mix(in srgb,var(--wglow) 80%,#fff),transparent);opacity:.6;
+  animation:streakRise 5.5s linear infinite;
+}
+.streak.s2{left:52%;animation-delay:-1.8s;height:45%}
+.streak.s3{left:70%;animation-delay:-3.4s;height:55%}
+@keyframes streakRise{to{transform:translateY(-300%)}}
+
+/* étincelles qui s'échappent au survol */
+.rift-sparks i{
+  position:absolute;left:50%;bottom:12%;width:3px;height:3px;border-radius:50%;
+  background:#fff;box-shadow:0 0 8px 2px var(--wglow);opacity:0;pointer-events:none;
+}
+.world:hover .rift-sparks i{animation:riftEmit 2.4s ease-out infinite}
+.rift-sparks i:nth-child(1){--x:-46px;animation-delay:0s!important}
+.rift-sparks i:nth-child(2){--x:30px;animation-delay:.4s!important}
+.rift-sparks i:nth-child(3){--x:-18px;animation-delay:.8s!important}
+.rift-sparks i:nth-child(4){--x:56px;animation-delay:1.2s!important}
+.rift-sparks i:nth-child(5){--x:-62px;animation-delay:1.6s!important}
+.rift-sparks i:nth-child(6){--x:12px;animation-delay:2s!important}
+@keyframes riftEmit{0%{opacity:0;transform:translate(0,0) scale(.6)}15%{opacity:1}100%{opacity:0;transform:translate(var(--x),-190px) scale(1.2)}}
+
+/* le personnage sort de la faille */
 .world .peek{
-  position:absolute;left:50%;top:-8px;transform:translate(-50%,52%) scale(.85);
-  width:74px;opacity:0;transition:.55s cubic-bezier(.3,1.4,.4,1);z-index:0;
-  filter:drop-shadow(0 6px 14px rgba(0,0,0,.55));
+  position:absolute;left:50%;bottom:6px;width:74px;z-index:4;pointer-events:none;
+  transform:translate(-50%,34px) scale(.8);opacity:0;transition:.6s cubic-bezier(.3,1.4,.4,1);
+  filter:drop-shadow(0 0 14px var(--wglow)) drop-shadow(0 6px 14px rgba(0,0,0,.6));
 }
 .world .peek svg,.world .peek img{width:100%;display:block}
-.world .peek img{max-height:110px;object-fit:contain;object-position:bottom}
-.world .orb{
-  width:150px;height:150px;border-radius:50%;position:relative;z-index:1;
-  transition:.5s cubic-bezier(.2,.7,.2,1);
-  animation:orbfloat 7s ease-in-out infinite;
-}
-.world:nth-child(3) .orb{animation-delay:-2.4s}
-.world:nth-child(4) .orb{animation-delay:-4.6s}
-@keyframes orbfloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-12px)}}
-.world .ring{position:absolute;inset:-16px;border-radius:50%;border:1px solid rgba(63,232,216,.22);transform:rotateX(68deg);z-index:2;pointer-events:none;transition:.5s}
-.world:hover{transform:scale(1.07);z-index:5}
-.world:hover .orb{box-shadow:0 0 70px var(--wglow),0 0 140px color-mix(in srgb,var(--wglow) 40%,transparent)!important}
-.world:hover .peek{transform:translate(-50%,-46%) scale(1);opacity:1}
-.world:hover .ring{border-color:color-mix(in srgb,var(--wglow) 60%,transparent)}
+.world .peek img{max-height:120px;object-fit:contain;object-position:bottom}
+.world:hover .peek{transform:translate(-50%,-4px) scale(1);opacity:1}
+
 .world .wname{font-family:'Unbounded',sans-serif;font-weight:600;font-size:1.02rem;margin-top:1.5rem;letter-spacing:.02em}
 .world .wtag{font-family:'Space Mono',monospace;font-size:.62rem;letter-spacing:.34em;text-transform:uppercase;color:var(--dim);margin-top:.5rem;transition:.4s}
 .world:hover .wtag{color:var(--wglow)}
@@ -210,23 +279,36 @@ h2{
   color:var(--wglow);opacity:0;transform:translateY(8px);transition:.45s .1s;
 }
 .world:hover .wenter{opacity:1;transform:none}
+
+/* la faille scellée */
 .world.mystery{cursor:default}
-.world.mystery .orb{
-  background:radial-gradient(circle at 34% 30%,#233a40,#0d1c20 58%,#050c0e 92%);
-  box-shadow:0 0 30px rgba(120,170,175,.18);
-  display:grid;place-items:center;overflow:visible;
-}
-.world.mystery:hover .orb{box-shadow:0 0 50px rgba(150,200,205,.28),0 0 100px rgba(120,170,175,.12)!important}
+.world.mystery:hover{transform:none}
+.world.mystery .rift-void{background:linear-gradient(180deg,#0b171a 0,#050a0c 50%,#1a2d31 100%)}
+.world.mystery .rift-rim{background:linear-gradient(180deg,#d6eef0 0,#7fa5a9 50%,#d6eef0 100%)}
 .world.mystery .qm{
-  position:absolute;font-family:'Unbounded',sans-serif;font-weight:300;color:rgba(180,220,222,.55);
-  text-shadow:0 0 14px rgba(150,220,220,.4);animation:qmfloat 6s ease-in-out infinite;pointer-events:none;
+  position:absolute;left:50%;top:44%;transform:translate(-50%,-50%);font-family:'Unbounded',sans-serif;font-weight:300;
+  font-size:2rem;color:rgba(190,225,228,.55);text-shadow:0 0 14px rgba(150,220,220,.45);animation:qmfloat 6s ease-in-out infinite;
 }
-.world.mystery .qm:nth-child(1){font-size:2.3rem;animation-delay:0s}
-.world.mystery .qm:nth-child(2){font-size:1.1rem;transform:translate(-38px,-30px);animation-delay:-2s;opacity:.6}
-.world.mystery .qm:nth-child(3){font-size:.95rem;transform:translate(36px,26px);animation-delay:-4s;opacity:.5}
 @keyframes qmfloat{0%,100%{translate:0 0}50%{translate:0 -9px}}
-.world.mystery .ring{border-style:dashed;animation:ringspin 26s linear infinite}
-@keyframes ringspin{from{transform:rotateX(68deg) rotateZ(0)}to{transform:rotateX(68deg) rotateZ(360deg)}}
+.seal{
+  position:absolute;left:30%;width:40%;height:2px;z-index:5;pointer-events:none;
+  background:repeating-linear-gradient(90deg,rgba(200,230,233,.7) 0 4px,transparent 4px 8px);
+  filter:drop-shadow(0 0 4px rgba(158,207,210,.6));
+}
+.seal.sl1{top:26%;transform:rotate(-9deg)}
+.seal.sl2{top:50%;transform:rotate(6deg)}
+.seal.sl3{top:74%;transform:rotate(-4deg)}
+.world.mystery:hover .rift{animation:riftTremble .35s linear infinite}
+@keyframes riftTremble{0%,100%{transform:translateX(0)}25%{transform:translateX(-1.5px)}75%{transform:translateX(1.5px)}}
+
+/* flash de couleur quand on franchit une faille */
+.riftflash{
+  position:fixed;inset:0;z-index:120;pointer-events:none;opacity:0;
+  transform-origin:var(--fx) var(--fy);
+  background:radial-gradient(circle at var(--fx) var(--fy),var(--fc) 0,color-mix(in srgb,var(--fc) 45%,transparent) 14%,transparent 42%);
+  animation:riftFlash .8s ease-out forwards;
+}
+@keyframes riftFlash{0%{opacity:0;transform:scale(.5)}25%{opacity:1}100%{opacity:0;transform:scale(2.4)}}
 
 /* ---------- personnages ---------- */
 #chargrid{margin-top:2rem}
@@ -590,6 +672,7 @@ button.chip{background:none;cursor:pointer}
   #apropos .wrap{grid-template-columns:1fr;gap:2.4rem}
   #cosmos{min-height:auto;display:flex;flex-direction:column;gap:3.4rem;align-items:center;padding:2rem 0}
   .world{position:static!important}
+  .riftwrap{width:150px;height:210px}
   #constellation{display:none}
 }
 @media (prefers-reduced-motion:reduce){
