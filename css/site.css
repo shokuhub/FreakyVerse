@@ -285,7 +285,7 @@ h2{
 .world:hover .wenter{opacity:1;transform:none}
 
 /* la faille scellée */
-.world.mystery{cursor:default}
+.world.mystery{cursor:pointer}
 .world.mystery:hover{transform:none}
 .world.mystery .rift-void{background:linear-gradient(180deg,#0b171a 0,#050a0c 50%,#1a2d31 100%)}
 .world.mystery .rift-rim{background:linear-gradient(180deg,#d6eef0 0,#7fa5a9 50%,#d6eef0 100%)}
@@ -683,3 +683,13 @@ button.chip{background:none;cursor:pointer}
   *,*::before,*::after{animation-duration:.001s!important;transition-duration:.2s!important}
   html{scroll-behavior:auto}
 }
+
+/* ---------- faille scellée : déchirée après le teaser ---------- */
+.world.mystery.torn{--wglow:#ff3a3a!important}
+.world.mystery.torn .rift-void{clip-path:var(--op);background:linear-gradient(180deg,#2a0508 0,#050102 50%,#5a0a12 100%)}
+.world.mystery.torn .rift-rim{clip-path:var(--op);background:linear-gradient(180deg,#ffd6d6 0,#ff2a2a 50%,#ffd6d6 100%)}
+.world.mystery.torn .qm{color:rgba(255,120,120,.75);text-shadow:0 0 16px rgba(255,60,60,.7)}
+.world.mystery.torn .seal{animation:sealBreak .6s ease-out forwards}
+.world.mystery.torn .seal.sl2{animation-delay:.14s}
+.world.mystery.torn .seal.sl3{animation-delay:.3s}
+@keyframes sealBreak{0%{opacity:1}30%{opacity:1;transform:rotate(-14deg) scaleX(1.15)}100%{opacity:0;transform:translateY(26px) rotate(40deg) scaleX(.2)}}
