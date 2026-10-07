@@ -63,11 +63,26 @@ function injectCss(){
   .p-rire .c.v{animation:pwave 1s ease-in-out infinite;animation-delay:calc(var(--i)*70ms)}
   @keyframes pwave{0%,100%{transform:translateY(0)}50%{transform:translateY(-.12em)}}
   .p-guette .ptext{color:#86a5e6;font-size:clamp(1rem,2.2vw,1.6rem);opacity:.9}.p-guette .pname{color:#6fa8dc}
-  #possess .pscream{position:absolute;inset:0;display:none;place-items:center;text-align:center;padding:0 4vw;color:#ff1e1e;font-size:clamp(2.6rem,10vw,8rem);line-height:1;text-shadow:0 0 28px #f00,0 0 60px #800;pointer-events:none}
+  #possess .pscream{position:absolute;inset:0;display:none;place-items:center;text-align:center;padding:0 4vw;color:#ff1e1e;font-size:clamp(2.1rem,7.2vw,6.2rem);line-height:1.08;text-shadow:0 0 28px #f00,0 0 60px #800;pointer-events:none}
   #possess .pscream.on{display:grid;animation:pscream .09s steps(2) infinite}
   @keyframes pscream{0%{transform:translate(-6px,3px) scale(1.02)}100%{transform:translate(6px,-3px) scale(1)}}
   #possess .pskip{position:absolute;right:1.4rem;bottom:1.2rem;font:inherit;font-size:.95rem;color:#8a8294;background:none;border:1px solid rgba(255,255,255,.18);padding:.4rem .9rem;cursor:pointer;opacity:0;transition:opacity 1s}
   #possess .pskip.show{opacity:.7}
+  #possess .peyes{position:absolute;inset:0;pointer-events:none;transition:transform .05s}
+  #possess .pe{position:absolute;display:flex;gap:calc(15px*var(--s,1));transform:translate(-50%,-50%) scale(var(--s,1));opacity:0;filter:blur(var(--b,0px));transition:opacity .5s}
+  #possess .pe.open{opacity:var(--o,1)}
+  #possess .pe .e{position:relative;width:30px;height:11px;border-radius:50%/60%;background:radial-gradient(ellipse at center,#fff3c4 0,#ff7a3a 45%,#b0141a 80%);box-shadow:0 0 14px 3px rgba(255,70,40,.7),0 0 40px 8px rgba(255,30,20,.3);transform:scaleY(0);transition:transform .4s cubic-bezier(.2,1.4,.4,1),box-shadow .3s}
+  #possess .pe.open .e{transform:scaleY(1)}
+  #possess .pe.open.blink .e{transform:scaleY(.08);transition-duration:.07s}
+  #possess .pe .e i{position:absolute;left:50%;top:50%;width:4px;height:135%;background:#150000;border-radius:50%;transform:translate(calc(-50% + var(--px,0px)),calc(-50% + var(--py,0px)))}
+  #possess.flare .pe .e{box-shadow:0 0 22px 7px rgba(255,60,40,1),0 0 80px 22px rgba(255,20,10,.65)}
+  #possess.stress .pgrain{opacity:.18}
+  #possess.stress .pvig{animation:pvig 1.1s ease-in-out infinite}
+  @keyframes pvig{0%,100%{transform:scale(1)}50%{transform:scale(1.22)}}
+  #possess.stress .pbox{animation:ptrem .1s steps(2) infinite}
+  @keyframes ptrem{0%{transform:translateX(-50%)}100%{transform:translate(calc(-50% + 2px),1px)}}
+  #possess.jit .peyes{transform:translate(4px,-3px)}
+  #possess.jit .pgrain{opacity:.35}
   main.pshake{animation:pshake .12s steps(2) infinite}
   @keyframes pshake{0%{transform:translate(-5px,2px)}100%{transform:translate(6px,-3px)}}
   `;
@@ -78,16 +93,23 @@ function injectCss(){
 function build(){
   if(root)return;
   root=document.createElement('div'); root.id='possess';
-  root.innerHTML=`<div class="pgrain"></div><div class="pvig"></div><div class="pslices"></div>
+  root.innerHTML=`<div class="pgrain"></div><div class="pvig"></div><div class="pslices"></div><div class="peyes"></div>
     <div class="pbox"><div class="pname">???</div><div class="ptext"></div></div>
     <div class="pscream"></div><div class="pflash"></div>
     <button class="pskip" type="button">Passer (Échap)</button>`;
   document.body.appendChild(root);
-  els={slices:root.querySelector('.pslices'),box:root.querySelector('.pbox'),name:root.querySelector('.pname'),
+  els={eyes:root.querySelector('.peyes'),slices:root.querySelector('.pslices'),box:root.querySelector('.pbox'),name:root.querySelector('.pname'),
        text:root.querySelector('.ptext'),scream:root.querySelector('.pscream'),flash:root.querySelector('.pflash'),
        skip:root.querySelector('.pskip')};
   els.skip.addEventListener('click',e=>{e.stopPropagation();skip()});
   root.addEventListener('click',()=>{ if(typing)quick=true; else if(clickWake)clickWake(); });
+  let mmWait=false;
+  root.addEventListener('mousemove',e=>{            /* les yeux suivent le curseur */
+    if(reduce||mmWait)return; mmWait=true;
+    requestAnimationFrame(()=>{ mmWait=false;
+      root.style.setProperty('--px',((e.clientX/innerWidth-.5)*7).toFixed(1)+'px');
+      root.style.setProperty('--py',((e.clientY/innerHeight-.5)*5).toFixed(1)+'px'); });
+  });
 }
 
 /* ---------- audio ---------- */
@@ -181,17 +203,96 @@ function flashOnce(){
   els.flash.style.transition='none'; els.flash.style.opacity=1; void els.flash.offsetWidth;
   els.flash.style.transition='opacity .5s ease-out'; els.flash.style.opacity=0;
 }
+/* ----- la tension : battements de cœur qui s'accélèrent, dissonance qui monte, chuchotements ----- */
+let stress=null, eyeTimers=[], eyePairs=[];
+function heart(at){
+  [[0,.4,62],[.17,.27,55]].forEach(([d,v,f])=>{
+    const o=ctx.createOscillator(), g=ctx.createGain();
+    o.type='sine'; o.frequency.setValueAtTime(f*1.6,at+d); o.frequency.exponentialRampToValueAtTime(f*.6,at+d+.12);
+    g.gain.setValueAtTime(v,at+d); g.gain.exponentialRampToValueAtTime(.0001,at+d+.16);
+    o.connect(g); g.connect(master); o.start(at+d); o.stop(at+d+.2);
+  });
+}
+function startStress(){
+  if(stress)return;
+  stress={on:true,t0:performance.now(),timers:[],nodes:[]};
+  root.classList.add('stress');
+  const el=()=>(performance.now()-stress.t0)/1000;
+  if(ctx){
+    const t=ctx.currentTime;
+    [[220,1],[311.13,1],[233.08,1]].forEach(([f],k)=>{            /* notes en conflit (triton + seconde mineure) */
+      const o=ctx.createOscillator(), g=ctx.createGain(), l=ctx.createOscillator(), lg=ctx.createGain();
+      o.type='sine'; o.frequency.setValueAtTime(f,t); o.frequency.linearRampToValueAtTime(f*1.07,t+6);
+      l.frequency.value=4.2+k*1.3; lg.gain.value=.012; l.connect(lg); lg.connect(g.gain);
+      g.gain.setValueAtTime(.0001,t); g.gain.linearRampToValueAtTime(.045,t+4.5);
+      o.connect(g); g.connect(master); o.start(t); l.start(t); stress.nodes.push({o,l,g});
+    });
+    const beat=()=>{ if(!stress||!stress.on)return; heart(ctx.currentTime);
+      stress.timers.push(setTimeout(beat,60000/clamp(60+el()*17,60,150))); };
+    const whisper=()=>{ if(!stress||!stress.on)return;
+      if(buf.chuchote_1)snd('chuchote_1',.5+rnd()*.35,.07+Math.min(.2,el()*.04));
+      stress.timers.push(setTimeout(whisper,clamp(1100-el()*130,260,1100)+rnd()*260)); };
+    beat(); stress.timers.push(setTimeout(whisper,500));
+  }
+  if(!reduce){                                                     /* micro-secousses irrégulières */
+    const jit=()=>{ if(!stress||!stress.on)return; root.classList.add('jit');
+      setTimeout(()=>root.classList.remove('jit'),90);
+      stress.timers.push(setTimeout(jit,600+rnd()*1100)); };
+    stress.timers.push(setTimeout(jit,900));
+  }
+}
+function stopStress(hard){
+  if(!stress)return;
+  const s=stress; stress=null; s.on=false; s.timers.forEach(clearTimeout);
+  if(ctx){ const t=ctx.currentTime, f=hard?.05:.6;
+    s.nodes.forEach(n=>{ try{ n.g.gain.cancelScheduledValues(t); n.g.gain.setValueAtTime(Math.max(.0001,n.g.gain.value),t);
+      n.g.gain.exponentialRampToValueAtTime(.0001,t+f); n.o.stop(t+f+.05); n.l.stop(t+f+.05); }catch(e){} }); }
+  root.classList.remove('stress','jit');
+}
+
+/* ----- les yeux dans la pénombre ----- */
+function makeEyes(){
+  clearEyes();
+  const pts=[]; let tries=0;
+  while(pts.length<15&&tries<400){
+    tries++;
+    const x=6+rnd()*88, y=8+rnd()*84;
+    if(x>14&&x<86&&y>62)continue;                                   /* on garde la zone du texte dégagée */
+    if(pts.some(p=>Math.hypot(p.x-x,(p.y-y)*.6)<13))continue;
+    pts.push({x,y});
+  }
+  pts.forEach(p=>{
+    const s=.55+rnd()*1.15, pe=document.createElement('div'); pe.className='pe';
+    pe.style.left=p.x+'%'; pe.style.top=p.y+'%';
+    pe.style.setProperty('--s',s.toFixed(2)); pe.style.setProperty('--b',s<.9?'1.2px':'0px'); pe.style.setProperty('--o',(.5+Math.min(.5,s*.32)).toFixed(2));
+    pe.innerHTML='<span class="e"><i></i></span><span class="e"><i></i></span>';
+    els.eyes.appendChild(pe); eyePairs.push(pe);
+  });
+}
+function clearEyes(){ eyeTimers.forEach(clearTimeout); eyeTimers=[]; eyePairs=[]; if(els.eyes)els.eyes.innerHTML=''; }
+async function summonEyes(){
+  makeEyes();
+  eyePairs.forEach((p,i)=>eyeTimers.push(setTimeout(()=>p.classList.add('open'),150+i*210+rnd()*90)));
+  if(!reduce){
+    const blink=()=>{ const open=eyePairs.filter(p=>p.classList.contains('open'));
+      for(let k=0;k<2&&open.length;k++){ const p=open[rnd()*open.length|0]; p.classList.add('blink'); setTimeout(()=>p.classList.remove('blink'),110); }
+      eyeTimers.push(setTimeout(blink,500+rnd()*800)); };
+    eyeTimers.push(setTimeout(blink,1200));
+  }
+  await W(3700);
+}
 async function doScream(){
   screamed=true;
   els.box.classList.remove('show');
-  await W(800);                                   /* un silence de trop avant le cri */
-  els.scream.textContent="JE T'AI VU !"; els.scream.classList.add('on');
-  flashOnce();
+  stopStress(true);                                 /* le son se coupe net : silence, et les yeux nous fixent */
+  await W(1000);
+  els.scream.innerHTML="CE N'EST PAS ENCORE PRÊT,<br>SORS D'ICI !"; els.scream.classList.add('on');
+  root.classList.add('flare'); flashOnce();
   if(!reduce)document.querySelector('main')?.classList.add('pshake');
   snd('cri_1',.85,.95); snd('cri_1',.62,.7); noiseBurst(ctx?ctx.currentTime:0,.25,600,.5);
-  await W(1100);
+  await W(2100);
   els.scream.classList.remove('on'); document.querySelector('main')?.classList.remove('pshake');
-  root.classList.add('black');
+  root.classList.remove('flare'); clearEyes();
   await W(1500);
 }
 
@@ -242,14 +343,17 @@ async function run(w){
       await say("Ça faisait longtemps qu'on n'avait pas eu de la compagnie.",'calme',{hold:1700});
       await say("J'ai hâte.",'rire',{hold:1300});
       await W(700);
-      await say('…Tu nous écoutes ?','calme',{hold:900});
+      startStress();                                  /* ils réalisent qu'on les écoute : l'ambiance devient pesante */
+      await say('…Tu nous écoutes ?','calme',{hold:500});
+      await summonEyes();
       await doScream();
     }
   }catch(e){ if(e!==ABORT)console.error(e); }
   finally{ cleanup(); }
 }
 function cleanup(){
-  glitchStop(); clearInterval(glitchTimer);
+  glitchStop(); clearInterval(glitchTimer); stopStress(true); clearEyes();
+  root.classList.remove('flare');
   try{ footsteps&&footsteps.s.stop(); }catch(e){} footsteps=null;
   document.removeEventListener('keydown',onKey,true);
   els.scream.classList.remove('on'); els.box.classList.remove('show'); els.skip.classList.remove('show');
