@@ -419,9 +419,29 @@ function loadTeaser(cb){
   sc.onerror=()=>{ teaserState=0; if(typeof SND!=='undefined'&&SND.on)SND.sealed(); };
   document.body.appendChild(sc);
 }
+/* le son est obligatoire : sans lui, la séquence serait gâchée et ne se rejoue pas */
+function askSound(go){
+  let g=document.getElementById('soundGate');
+  if(!g){
+    g=document.createElement('div'); g.className='overlay'; g.id='soundGate';
+    g.innerHTML=`<div class="ovpanel"><div class="pwbox">
+      <h3>🔊 Le son est nécessaire</h3>
+      <p>Cette séquence se vit avec le son (un casque est conseillé). La version complète ne se joue qu'une seule fois : active le son pour ne rien manquer.</p>
+      <button class="btn solid" id="sgYes" style="width:100%">Activer le son et continuer</button>
+      <button class="btn ghost" id="sgNo" style="width:100%;margin-top:.6rem">Plus tard</button>
+    </div></div>`;
+    document.body.appendChild(g);
+    g.querySelector('#sgNo').addEventListener('click',()=>closeOv('soundGate'));
+  }
+  g.querySelector('#sgYes').onclick=()=>{ setSnd(true); closeOv('soundGate'); go(); };
+  openOv('soundGate');
+}
 document.querySelectorAll('.world.mystery').forEach(m=>{
   m.addEventListener('pointerenter',()=>loadTeaser(),{once:true});   /* préchargé dès le survol : prêt au clic */
-  m.addEventListener('click',()=>loadTeaser(()=>window.FVTeaser&&window.FVTeaser.run(m)));
+  m.addEventListener('click',()=>{
+    const go=()=>loadTeaser(()=>window.FVTeaser&&window.FVTeaser.run(m));
+    if(SND.on) go(); else askSound(go);
+  });
 });
 function riftFlash(w,color){
   if(reduced)return;

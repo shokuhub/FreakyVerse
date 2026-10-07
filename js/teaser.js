@@ -68,20 +68,21 @@ function injectCss(){
   @keyframes pscream{0%{transform:translate(-6px,3px) scale(1.02)}100%{transform:translate(6px,-3px) scale(1)}}
   #possess .pskip{position:absolute;right:1.4rem;bottom:1.2rem;font:inherit;font-size:.95rem;color:#8a8294;background:none;border:1px solid rgba(255,255,255,.18);padding:.4rem .9rem;cursor:pointer;opacity:0;transition:opacity 1s}
   #possess .pskip.show{opacity:.7}
-  #possess .peyes{position:absolute;inset:0;pointer-events:none;transition:transform .05s}
-  #possess .pe{position:absolute;display:flex;gap:calc(15px*var(--s,1));transform:translate(-50%,-50%) scale(var(--s,1));opacity:0;filter:blur(var(--b,0px));transition:opacity .5s}
-  #possess .pe.open{opacity:var(--o,1)}
-  #possess .pe .e{position:relative;width:30px;height:11px;border-radius:50%/60%;background:radial-gradient(ellipse at center,#fff3c4 0,#ff7a3a 45%,#b0141a 80%);box-shadow:0 0 14px 3px rgba(255,70,40,.7),0 0 40px 8px rgba(255,30,20,.3);transform:scaleY(0);transition:transform .4s cubic-bezier(.2,1.4,.4,1),box-shadow .3s}
-  #possess .pe.open .e{transform:scaleY(1)}
-  #possess .pe.open.blink .e{transform:scaleY(.08);transition-duration:.07s}
-  #possess .pe .e i{position:absolute;left:50%;top:50%;width:4px;height:135%;background:#150000;border-radius:50%;transform:translate(calc(-50% + var(--px,0px)),calc(-50% + var(--py,0px)))}
-  #possess.flare .pe .e{box-shadow:0 0 22px 7px rgba(255,60,40,1),0 0 80px 22px rgba(255,20,10,.65)}
+  #possess .porbs{position:absolute;inset:0;pointer-events:none}
+  #possess .po{position:absolute;width:var(--d);height:var(--d);border-radius:50%;opacity:0;
+    transform:translate(calc(-50% + var(--px,0px)*var(--k,1)),calc(-50% + var(--py,0px)*var(--k,1))) scale(.35);
+    background:radial-gradient(circle,#fff 0,#ffe3d2 12%,rgba(255,96,70,.95) 34%,rgba(200,20,30,.5) 58%,rgba(120,0,10,0) 76%);
+    box-shadow:0 0 calc(var(--d)*.7) calc(var(--d)*.1) rgba(255,45,35,.5);
+    transition:opacity 1.4s ease,transform 4.8s cubic-bezier(.12,.6,.3,1),box-shadow .3s}
+  #possess .po.open{opacity:var(--o,1);transform:translate(calc(-50% + var(--px,0px)*var(--k,1)),calc(-50% + var(--py,0px)*var(--k,1))) scale(1);animation:populse 2.6s ease-in-out infinite}
+  @keyframes populse{0%,100%{filter:brightness(.85)}50%{filter:brightness(1.5)}}
+  #possess.flare .po{box-shadow:0 0 calc(var(--d)*1.1) calc(var(--d)*.3) rgba(255,40,30,.95);filter:brightness(2);transform:translate(-50%,-50%) scale(1.45);transition:transform .35s ease-out,box-shadow .2s}
   #possess.stress .pgrain{opacity:.18}
   #possess.stress .pvig{animation:pvig 1.1s ease-in-out infinite}
   @keyframes pvig{0%,100%{transform:scale(1)}50%{transform:scale(1.22)}}
   #possess.stress .pbox{animation:ptrem .1s steps(2) infinite}
   @keyframes ptrem{0%{transform:translateX(-50%)}100%{transform:translate(calc(-50% + 2px),1px)}}
-  #possess.jit .peyes{transform:translate(4px,-3px)}
+  #possess.jit .porbs{transform:translate(4px,-3px)}
   #possess.jit .pgrain{opacity:.35}
   main.pshake{animation:pshake .12s steps(2) infinite}
   @keyframes pshake{0%{transform:translate(-5px,2px)}100%{transform:translate(6px,-3px)}}
@@ -93,18 +94,18 @@ function injectCss(){
 function build(){
   if(root)return;
   root=document.createElement('div'); root.id='possess';
-  root.innerHTML=`<div class="pgrain"></div><div class="pvig"></div><div class="pslices"></div><div class="peyes"></div>
+  root.innerHTML=`<div class="pgrain"></div><div class="pvig"></div><div class="pslices"></div><div class="porbs"></div>
     <div class="pbox"><div class="pname">???</div><div class="ptext"></div></div>
     <div class="pscream"></div><div class="pflash"></div>
     <button class="pskip" type="button">Passer (Échap)</button>`;
   document.body.appendChild(root);
-  els={eyes:root.querySelector('.peyes'),slices:root.querySelector('.pslices'),box:root.querySelector('.pbox'),name:root.querySelector('.pname'),
+  els={orbs:root.querySelector('.porbs'),slices:root.querySelector('.pslices'),box:root.querySelector('.pbox'),name:root.querySelector('.pname'),
        text:root.querySelector('.ptext'),scream:root.querySelector('.pscream'),flash:root.querySelector('.pflash'),
        skip:root.querySelector('.pskip')};
   els.skip.addEventListener('click',e=>{e.stopPropagation();skip()});
   root.addEventListener('click',()=>{ if(typing)quick=true; else if(clickWake)clickWake(); });
   let mmWait=false;
-  root.addEventListener('mousemove',e=>{            /* les yeux suivent le curseur */
+  root.addEventListener('mousemove',e=>{            /* les boules dérivent doucement vers le curseur */
     if(reduce||mmWait)return; mmWait=true;
     requestAnimationFrame(()=>{ mmWait=false;
       root.style.setProperty('--px',((e.clientX/innerWidth-.5)*7).toFixed(1)+'px');
@@ -204,7 +205,7 @@ function flashOnce(){
   els.flash.style.transition='opacity .5s ease-out'; els.flash.style.opacity=0;
 }
 /* ----- la tension : battements de cœur qui s'accélèrent, dissonance qui monte, chuchotements ----- */
-let stress=null, eyeTimers=[], eyePairs=[];
+let stress=null;
 function heart(at){
   [[0,.4,62],[.17,.27,55]].forEach(([d,v,f])=>{
     const o=ctx.createOscillator(), g=ctx.createGain();
@@ -250,41 +251,37 @@ function stopStress(hard){
   root.classList.remove('stress','jit');
 }
 
-/* ----- les yeux dans la pénombre ----- */
-function makeEyes(){
-  clearEyes();
+/* ----- les boules de lumière dans la pénombre ----- */
+function makeOrbs(){
+  clearOrbs();
   const pts=[]; let tries=0;
-  while(pts.length<15&&tries<400){
+  while(pts.length<7&&tries<500){
     tries++;
-    const x=6+rnd()*88, y=8+rnd()*84;
-    if(x>14&&x<86&&y>62)continue;                                   /* on garde la zone du texte dégagée */
-    if(pts.some(p=>Math.hypot(p.x-x,(p.y-y)*.6)<13))continue;
+    const x=8+rnd()*84, y=10+rnd()*80;
+    if(x>12&&x<88&&y>62)continue;                                   /* zone du texte dégagée */
+    if(pts.some(p=>Math.hypot(p.x-x,(p.y-y)*.6)<17))continue;
     pts.push({x,y});
   }
   pts.forEach(p=>{
-    const s=.55+rnd()*1.15, pe=document.createElement('div'); pe.className='pe';
-    pe.style.left=p.x+'%'; pe.style.top=p.y+'%';
-    pe.style.setProperty('--s',s.toFixed(2)); pe.style.setProperty('--b',s<.9?'1.2px':'0px'); pe.style.setProperty('--o',(.5+Math.min(.5,s*.32)).toFixed(2));
-    pe.innerHTML='<span class="e"><i></i></span><span class="e"><i></i></span>';
-    els.eyes.appendChild(pe); eyePairs.push(pe);
+    const d=24+rnd()*58, o=document.createElement('div'); o.className='po';
+    o.style.left=p.x+'%'; o.style.top=p.y+'%';
+    o.style.setProperty('--d',d.toFixed(0)+'px');
+    o.style.setProperty('--o',(.55+Math.min(.45,d/130)).toFixed(2));
+    o.style.setProperty('--k',(.5+rnd()*1.6).toFixed(2));
+    els.orbs.appendChild(o); orbList.push(o);
   });
 }
-function clearEyes(){ eyeTimers.forEach(clearTimeout); eyeTimers=[]; eyePairs=[]; if(els.eyes)els.eyes.innerHTML=''; }
-async function summonEyes(){
-  makeEyes();
-  eyePairs.forEach((p,i)=>eyeTimers.push(setTimeout(()=>p.classList.add('open'),150+i*210+rnd()*90)));
-  if(!reduce){
-    const blink=()=>{ const open=eyePairs.filter(p=>p.classList.contains('open'));
-      for(let k=0;k<2&&open.length;k++){ const p=open[rnd()*open.length|0]; p.classList.add('blink'); setTimeout(()=>p.classList.remove('blink'),110); }
-      eyeTimers.push(setTimeout(blink,500+rnd()*800)); };
-    eyeTimers.push(setTimeout(blink,1200));
-  }
-  await W(3700);
+let orbTimers=[], orbList=[];
+function clearOrbs(){ orbTimers.forEach(clearTimeout); orbTimers=[]; orbList=[]; if(els.orbs)els.orbs.innerHTML=''; }
+async function summonOrbs(){
+  makeOrbs();
+  orbList.forEach((o,i)=>orbTimers.push(setTimeout(()=>o.classList.add('open'),200+i*430+rnd()*160)));
+  await W(4200);
 }
 async function doScream(){
   screamed=true;
   els.box.classList.remove('show');
-  stopStress(true);                                 /* le son se coupe net : silence, et les yeux nous fixent */
+  stopStress(true);                                 /* le son se coupe net : silence, et les boules nous fixent */
   await W(1000);
   els.scream.innerHTML="CE N'EST PAS ENCORE PRÊT,<br>SORS D'ICI !"; els.scream.classList.add('on');
   root.classList.add('flare'); flashOnce();
@@ -292,7 +289,7 @@ async function doScream(){
   snd('cri_1',.85,.95); snd('cri_1',.62,.7); noiseBurst(ctx?ctx.currentTime:0,.25,600,.5);
   await W(2100);
   els.scream.classList.remove('on'); document.querySelector('main')?.classList.remove('pshake');
-  root.classList.remove('flare'); clearEyes();
+  root.classList.remove('flare'); clearOrbs();
   await W(1500);
 }
 
@@ -301,6 +298,7 @@ function onKey(e){ if(e.key==='Escape'){ e.stopImmediatePropagation(); skip(); }
 async function run(w){
   if(running)return; running=true; skipped=false; quick=false; typing=false; screamed=false;
   let seen=false; try{ seen=localStorage.getItem('fv_teaser')==='1'; }catch(e){}
+  if(/teaser/.test(location.search+location.hash)) seen=false;   /* ouvrir le site avec ?teaser force la version complète (pour tester) */
   injectCss(); build();
   document.body.style.overflow='hidden';
   root.classList.remove('black'); root.classList.add('on'); els.box.className='pbox';
@@ -345,14 +343,14 @@ async function run(w){
       await W(700);
       startStress();                                  /* ils réalisent qu'on les écoute : l'ambiance devient pesante */
       await say('…Tu nous écoutes ?','calme',{hold:500});
-      await summonEyes();
+      await summonOrbs();
       await doScream();
     }
   }catch(e){ if(e!==ABORT)console.error(e); }
   finally{ cleanup(); }
 }
 function cleanup(){
-  glitchStop(); clearInterval(glitchTimer); stopStress(true); clearEyes();
+  glitchStop(); clearInterval(glitchTimer); stopStress(true); clearOrbs();
   root.classList.remove('flare');
   try{ footsteps&&footsteps.s.stop(); }catch(e){} footsteps=null;
   document.removeEventListener('keydown',onKey,true);
