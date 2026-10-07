@@ -399,6 +399,30 @@ document.querySelectorAll('.world').forEach(w=>{
     });
   }
 });
+/* ---- teaser de la faille scellée ---- */
+window.FVduck=d=>SND.duck(d);
+window.FVmarkTorn=function(w){
+  w=w||document.querySelector('.world.mystery'); if(!w)return;
+  w.classList.add('torn');
+  const i=w.querySelector('.winfo'), e=w.querySelector('.wenter');
+  if(i)i.textContent="Les coutures sont défaites. Quelqu'un attend de l'autre côté.";
+  if(e)e.textContent="Ils arrivent bientôt…";
+};
+try{ if(localStorage.getItem('fv_teaser')==='1') window.FVmarkTorn(); }catch(e){}
+let teaserState=0;   /* 0 = pas chargé, 1 = en cours, 2 = prêt */
+function loadTeaser(cb){
+  if(teaserState===2){ cb&&cb(); return; }
+  if(teaserState===1)return;
+  teaserState=1;
+  const sc=document.createElement('script'); sc.src='js/teaser.js';
+  sc.onload=()=>{ teaserState=2; cb&&cb(); };
+  sc.onerror=()=>{ teaserState=0; if(typeof SND!=='undefined'&&SND.on)SND.sealed(); };
+  document.body.appendChild(sc);
+}
+document.querySelectorAll('.world.mystery').forEach(m=>{
+  m.addEventListener('pointerenter',()=>loadTeaser(),{once:true});   /* préchargé dès le survol : prêt au clic */
+  m.addEventListener('click',()=>loadTeaser(()=>window.FVTeaser&&window.FVTeaser.run(m)));
+});
 function riftFlash(w,color){
   if(reduced)return;
   const r=w.querySelector('.rift').getBoundingClientRect();
@@ -988,6 +1012,7 @@ const SND=(()=>{
     },
     hover(){tone(520,760,.14,.045,'sine',.3)},
     rift, sealed,
+    duck(d){ if(!ctx)return; master.gain.cancelScheduledValues(ctx.currentTime); master.gain.setTargetAtTime(d?.0001:(on?.5:0),ctx.currentTime,d?.08:.8); },
     hoverWorld(){chime(SCALE[2],.035,1.8);setTimeout(()=>chime(SCALE[5],.025,1.6),90)},
     click(){tone(340,220,.16,.06,'triangle',.4)},
     open(){whoosh(false,.5,.14);setTimeout(()=>tone(660,990,.9,.04,'sine',1),120)},
@@ -1031,7 +1056,7 @@ document.addEventListener('pointerover',e=>{
   if(!tgt||tgt===e.relatedTarget||tgt.contains(e.relatedTarget))return;
   const now=performance.now();
   if(now-lastHover<70)return;lastHover=now;
-  if(world) world.classList.contains('mystery') ? SND.sealed() : SND.rift();
+  if(world) (world.classList.contains('mystery') && !world.classList.contains('torn')) ? SND.sealed() : SND.rift();
   else SND.hover();
 });
 document.addEventListener('click',e=>{
