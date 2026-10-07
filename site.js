@@ -1,0 +1,1071 @@
+/* ============================================================
+   FREAKYVERSE — logique du site
+   Le CONTENU (personnages, mondes, galeries…) est dans js/data/
+   Ne modifiez ce fichier que pour changer le comportement du site.
+   ============================================================ */
+const FV=window.FV;
+const ARCS=FV.ARCS, CINES=FV.CINES, GALLERY=FV.GALLERY, CHARS=FV.CHARS, WORLDS=FV.WORLDS, PASS_HASH=FV.PASS_HASH;
+/* Mantes-la-Jolie est intégrée d'office : la faille reste cliquable même si les fichiers de données n'ont pas été modifiés */
+if(!ARCS.some(a=>a.id==='mantes')) ARCS.push({id:'mantes',name:'Mantes-la-Jolie',color:'#ffb347'});
+if(!WORLDS.mantes) WORLDS.mantes={accent:"#ffb347",soon:true,eyebrow:"Arc 4 · Nouvelle faille",title:"Mantes-la-<em>Jolie</em>",
+  tag:"Une nouvelle faille s'ouvre.",desc:"Une nouvelle faille vient de s'ouvrir dans le ciel du multivers. Ce qu'elle cache reste à découvrir.",tl:[],chars:[],codex:[],gal:[]};
+let pendingArc=null;   /* arc à cocher d'office quand on crée un perso depuis la page d'une faille */
+function pixelFace(p){
+  return `<svg class="face" viewBox="0 0 8 8" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges">
+  <rect width="8" height="8" fill="${p.bg}"/>
+  <rect x="1" y="1" width="6" height="${p.hairRows||3}" fill="${p.hair}"/>
+  <rect x="1" y="${1+(p.hairRows||3)}" width="6" height="${6-(p.hairRows||3)}" fill="${p.skin}"/>
+  <rect x="2" y="4" width="1" height="1" fill="${p.eye}"/>
+  <rect x="5" y="4" width="1" height="1" fill="${p.eye}"/>
+  <rect x="3" y="6" width="2" height="1" fill="${p.mouth}"/>
+  ${p.extra||""}
+  </svg>`;
+}
+/* ================= AMBIENT CANVAS ================= */
+const cv = document.getElementById('sky'), cx = cv.getContext('2d');
+let stars=[], dust=[], shoot=null, W2,H2;
+const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+function resize(){W2=cv.width=innerWidth;H2=cv.height=innerHeight;
+  stars=Array.from({length:Math.min(150,W2/9)},()=>({x:Math.random()*W2,y:Math.random()*H2,r:Math.random()*1.3+.3,p:Math.random()*Math.PI*2,s:.4+Math.random()*1.4}));
+  dust=Array.from({length:34},()=>({x:Math.random()*W2,y:Math.random()*H2,r:Math.random()*2+1,vy:.12+Math.random()*.3,vx:(Math.random()-.5)*.14,a:.08+Math.random()*.2}));
+}
+addEventListener('resize',resize);resize();
+let lastTick=0;
+let skyRunning=true;
+function tick(t){
+  if(!skyRunning){ requestAnimationFrame(tick); return; }
+  if(t-lastTick<33){ if(!reduced) requestAnimationFrame(tick); return; }
+  lastTick=t;
+  cx.clearRect(0,0,W2,H2);
+  for(const s of stars){
+    const tw=.35+.65*Math.abs(Math.sin(t/1400*s.s+s.p));
+    cx.globalAlpha=tw*.8; cx.fillStyle='#cfeef0';
+    cx.beginPath();cx.arc(s.x,s.y,s.r,0,7);cx.fill();
+  }
+  cx.globalAlpha=1;
+  for(const d of dust){
+    d.y-=d.vy; d.x+=d.vx;
+    if(d.y<-10){d.y=H2+10;d.x=Math.random()*W2}
+    cx.globalAlpha=d.a; cx.fillStyle='#3fe8d8';
+    cx.beginPath();cx.arc(d.x,d.y,d.r,0,7);cx.fill();
+  }
+  if(!shoot && Math.random()<.0025) shoot={x:Math.random()*W2*.8,y:Math.random()*H2*.3,l:0};
+  if(shoot){
+    shoot.l+=14; const ex=shoot.x+shoot.l, ey=shoot.y+shoot.l*.35;
+    const g=cx.createLinearGradient(shoot.x,shoot.y,ex,ey);
+    g.addColorStop(0,'rgba(63,232,216,0)');g.addColorStop(1,'rgba(220,255,250,.9)');
+    cx.globalAlpha=1;cx.strokeStyle=g;cx.lineWidth=1.6;
+    cx.beginPath();cx.moveTo(shoot.x,shoot.y);cx.lineTo(ex,ey);cx.stroke();
+    if(shoot.l>260)shoot=null;
+  }
+  cx.globalAlpha=1;
+  requestAnimationFrame(tick);
+}
+requestAnimationFrame(tick);
+document.addEventListener('visibilitychange',()=>{ skyRunning=!document.hidden && !reduced; });
+skyRunning=!document.hidden && !reduced;
+const heroObs=new IntersectionObserver(entries=>{
+  const visible=entries[0].isIntersecting;
+  skyRunning=visible && !document.hidden && !reduced;
+  document.getElementById('heroScene')?.classList.toggle('paused',!visible);
+},{threshold:0});
+const heroEl=document.getElementById('hero');
+if(heroEl)heroObs.observe(heroEl);
+if(!reduced){
+  const qx1=gsap.quickTo('.f1','x',{duration:2,ease:'power2.out'});
+  const qy1=gsap.quickTo('.f1','y',{duration:2,ease:'power2.out'});
+  const qx2=gsap.quickTo('.f2','x',{duration:2.4,ease:'power2.out'});
+  const qy2=gsap.quickTo('.f2','y',{duration:2.4,ease:'power2.out'});
+  const qx3=gsap.quickTo('#heroScene','x',{duration:1.6,ease:'power2.out'});
+  const qy3=gsap.quickTo('#heroScene','y',{duration:1.6,ease:'power2.out'});
+  let mmPending=false, lastNx=0, lastNy=0;
+  addEventListener('mousemove',e=>{
+    lastNx=(e.clientX/innerWidth-.5); lastNy=(e.clientY/innerHeight-.5);
+    if(mmPending)return;
+    mmPending=true;
+    requestAnimationFrame(()=>{
+      mmPending=false;
+      qx1(lastNx*30); qy1(lastNy*20);
+      qx2(lastNx*-42); qy2(lastNy*-26);
+      qx3(lastNx*-18); qy3(lastNy*-10);
+    });
+  },{passive:true});
+}
+/* ================= ALERTE PERFORMANCE ================= */
+(function(){
+  const KEY='fv_perf_dismissed';
+  try{ if(localStorage.getItem(KEY)==='1') return; }catch(e){}
+  const el=document.getElementById('perfAlert');
+  if(!el)return;
+  setTimeout(()=>el.classList.add('show'), 2600);
+  el.querySelectorAll('.perfbtn').forEach(b=>{
+    b.addEventListener('click',async ()=>{
+      const path=b.dataset.path;
+      try{
+        await navigator.clipboard.writeText(path);
+        document.getElementById('perfCopied').textContent=`Copié : ${path} — collez-le dans la barre d'adresse`;
+      }catch(e){
+        document.getElementById('perfCopied').textContent=path;
+      }
+    });
+  });
+  document.getElementById('perfClose').addEventListener('click',()=>{
+    el.classList.remove('show');
+    try{localStorage.setItem(KEY,'1')}catch(e){}
+  });
+})();
+/* ================= INTRO SEQUENCE ================= */
+const intro=document.getElementById('intro'), iLogo=document.getElementById('introLogo'),
+      nav=document.getElementById('nav'), navLogo=document.getElementById('navLogo');
+document.body.style.overflow='hidden';
+gsap.to(iLogo,{y:-14,duration:2.6,yoyo:true,repeat:-1,ease:'sine.inOut'});
+gsap.fromTo(iLogo,{opacity:0,scale:.92,filter:'blur(14px) drop-shadow(0 0 60px rgba(63,232,216,.35))'},
+  {opacity:1,scale:1,filter:'blur(0px) drop-shadow(0 0 60px rgba(63,232,216,.35))',duration:1.8,ease:'power3.out'});
+let entered=false;
+function enter(){
+  if(entered)return; entered=true;
+  gsap.killTweensOf(iLogo);
+  const r=navLogo.getBoundingClientRect(), ir=iLogo.getBoundingClientRect();
+  const tl=gsap.timeline({defaults:{ease:'power3.inOut'}});
+  tl.to(iLogo,{
+      x:r.left+r.width/2-(ir.left+ir.width/2),
+      y:r.top+r.height/2-(ir.top+ir.height/2),
+      scale:r.width/ir.width, duration:1.5},0)
+    .to(intro,{background:'transparent',duration:1.4},.2)
+    .add(()=>{nav.classList.add('on')}, .9)
+    .to(intro,{opacity:0,duration:.6,onComplete:()=>{intro.remove();document.body.style.overflow=''}},1.5)
+    .add(()=>{if(typeof SND!=='undefined'&&SND.on)SND.swell()},.3)
+    .add(revealHero,1.1);
+}
+intro.addEventListener('click',enter);
+setTimeout(enter, 3400);
+function revealHero(){
+  const words=document.querySelectorAll('#heroTitle .w span');
+  const tl=gsap.timeline();
+  tl.to('#heroEyebrow',{opacity:1,duration:.8})
+    .to(words,{y:0,duration:1,stagger:.07,ease:'power4.out'},'-=.4')
+    .to('#heroSub',{opacity:1,duration:1},'-=.5')
+    .to('#heroRow',{opacity:1,duration:.9},'-=.6')
+    .to('#scrollcue',{opacity:1,duration:1},'-=.4');
+}
+const ht=document.getElementById('heroTitle');
+ht.innerHTML=ht.innerHTML.split(/\s+/).map(w=>`<span class="w"><span>${w}</span></span>`).join(' ');
+/* ================= SCROLL REVEALS ================= */
+const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target)}}),{threshold:.12});
+document.querySelectorAll('.rv').forEach(el=>io.observe(el));
+gsap.registerPlugin(ScrollTrigger);
+if(!reduced){
+  gsap.to('#heroScene',{yPercent:14,ease:'none',scrollTrigger:{trigger:'#hero',start:'top top',end:'bottom top',scrub:true}});
+}
+/* ================= FRACTURES ENTRE LES FAILLES ================= */
+function crackPath(x1,y1,x2,y2,seed){
+  const n=9, dx=x2-x1, dy=y2-y1, len=Math.hypot(dx,dy)||1, nx=-dy/len, ny=dx/len;
+  let d=`M${x1.toFixed(1)},${y1.toFixed(1)}`;
+  for(let i=1;i<n;i++){
+    const t=i/n, r=Math.sin(seed*12.9898+i*78.233)*43758.5453, j=((r-Math.floor(r))-.5)*38;
+    d+=` L${(x1+dx*t+nx*j).toFixed(1)},${(y1+dy*t+ny*j).toFixed(1)}`;
+  }
+  return d+` L${x2.toFixed(1)},${y2.toFixed(1)}`;
+}
+function drawConstellation(){
+  const svg=document.getElementById('constellation');
+  if(innerWidth<961){svg.innerHTML='';return}
+  const cos=document.getElementById('cosmos').getBoundingClientRect();
+  const pts=[...document.querySelectorAll('.world .rift')].map(o=>{
+    const r=o.getBoundingClientRect();
+    return [r.left+r.width/2-cos.left, r.top+r.height/2-cos.top];
+  });
+  svg.setAttribute('viewBox',`0 0 ${cos.width} ${cos.height}`);
+  let h='';
+  for(let i=0;i<pts.length-1;i++)
+    h+=`<path d="${crackPath(pts[i][0],pts[i][1],pts[i+1][0],pts[i+1][1],i+1)}"/>`;
+  svg.innerHTML=h;
+}
+/* le décor des failles ne tourne que quand on le voit (économise le processeur) */
+new IntersectionObserver(es=>document.getElementById('cosmos').classList.toggle('paused',!es[0].isIntersecting),{rootMargin:'120px'}).observe(document.getElementById('cosmos'));
+addEventListener('resize',drawConstellation);
+setTimeout(drawConstellation,600);
+addEventListener('load',drawConstellation);
+/* ================= BUILD SECTIONS ================= */
+const cg=document.getElementById('chargrid');
+const visual=c=>c.img?`<img class="face" src="${c.img}" alt="${c.name}">`:pixelFace(c.face);
+const SB_URL=(FV.SUPABASE_URL||'').replace(/\/rest\/v1\/?$/,'').replace(/\/$/,'');
+const SB_KEY=FV.SUPABASE_KEY||'';
+const SB_ON=!!(SB_URL&&SB_KEY);
+const sbHeaders={apikey:SB_KEY,Authorization:'Bearer '+SB_KEY,'Content-Type':'application/json'};
+function rowToChar(r){return{id:r.id,name:r.nom,rp:r.rp||'',arcs:r.arcs||[],glow:r.glow||'#3fe8d8',
+  quote:r.citation||'',desc:r.histoire||'',perso:r.personnalite||'',rel:r.relations||[],
+  fun:r.anecdotes||[],img:r.img||null,face:r.face||null,ost:r.ost||null,links:r.liens||[]};}
+async function loadShared(){
+  if(!SB_ON)return;
+  try{
+    const res=await fetch(SB_URL+'/rest/v1/personnages?statut=eq.valide&select=*&order=created_at.asc',{headers:sbHeaders});
+    if(!res.ok)throw new Error(res.status);
+    const rows=await res.json();
+    rows.forEach(r=>{if(!CHARS.some(c=>c.id===r.id))CHARS.push(rowToChar(r));});
+    renderChars();
+  }catch(e){console.warn('Base indisponible :',e);}
+}
+const STORE='fv_chars';
+let memStore=[];
+function loadSaved(){try{return JSON.parse(localStorage.getItem(STORE)||'[]')}catch(e){return memStore}}
+function persist(list){try{localStorage.setItem(STORE,JSON.stringify(list))}catch(e){memStore=list}}
+let SAVED=SB_ON?[]:loadSaved();
+CHARS.push(...SAVED);
+function charCard(c,i){
+  return `<div class="char" style="--cg:${c.glow}" data-char="${i}">
+    <div class="halo"></div>
+    ${visual(c)}
+    <div class="meta">
+      <div class="cname">${c.name}</div>
+      <div class="cfac">${c.rp}</div>
+      <div class="cquote">${c.quote||''}</div>
+    </div>
+  </div>`;
+}
+function renderChars(){
+  const byArc = ARCS.map(a=>{
+    const list = CHARS.map((c,i)=>({c,i})).filter(({c})=>(c.arcs||[]).includes(a.id));
+    const body = list.length
+      ? `<div class="chargrid-arc">${list.map(({c,i})=>charCard(c,i)).join('')}</div>`
+      : `<div class="empty"><b>À venir</b>Les premiers personnages de cet arc arriveront bientôt.</div>`;
+    return `<div class="charArcHead" style="--arc:${a.color}"><span class="dot"></span>${a.name}</div>${body}`;
+  }).join('');
+  cg.innerHTML = byArc + `
+  <div class="charArcHead" style="--arc:#8ba1a3"><span class="dot"></span>Rejoindre le multivers</div>
+  <div class="chargrid-arc">
+    <div class="char add" id="addChar">
+      <div class="plus">+</div>
+      <div class="meta">
+        <div class="cname">Ajouter son personnage</div>
+        <div class="cfac">Réservé aux joueurs</div>
+      </div>
+    </div>
+    <div class="char add ghostedit" id="editChar">
+      <div class="plus">✎</div>
+      <div class="meta">
+        <div class="cname">Modifier mon personnage</div>
+        <div class="cfac">Avec votre code d'édition</div>
+      </div>
+    </div>
+  </div>`;
+  document.getElementById('addChar').addEventListener('click',()=>{
+    pendingArc=null;
+    document.getElementById('pwErr').textContent='';
+    document.getElementById('pwInput').value='';
+    openOv('pwGate');
+    setTimeout(()=>document.getElementById('pwInput').focus(),150);
+  });
+  document.getElementById('editChar').addEventListener('click',()=>{
+    document.getElementById('editErr').textContent='';
+    document.getElementById('editId').value='';
+    document.getElementById('editCode').value='';
+    const mine=myChars();
+    const quick=document.getElementById('editQuick');
+    if(mine.length){
+      quick.style.display='block';
+      quick.innerHTML=`<div class="hint" style="margin-bottom:.6rem">Personnages créés sur cet appareil :</div>
+        <div class="chips">${mine.map(m=>`<button type="button" class="chip" data-quick-id="${m.id}" data-quick-code="${m.code}">${m.name}</button>`).join('')}</div>`;
+      quick.querySelectorAll('[data-quick-id]').forEach(b=>b.addEventListener('click',()=>{
+        document.getElementById('editId').value=b.dataset.quickId;
+        document.getElementById('editCode').value=b.dataset.quickCode;
+      }));
+    }else{
+      quick.style.display='none'; quick.innerHTML='';
+    }
+    openOv('editGate');
+  });
+}
+renderChars();
+loadShared();
+document.getElementById('cineArcs').innerHTML=ARCS.map(a=>{
+  const items=CINES[a.id]||[];
+  const body=items.length
+    ? `<div class="cinerow">${items.map(c=>`
+        <div class="cine" data-yt="${c.yt||''}" data-bg="${c.img}">
+          <span class="badge">${c.badge}</span>
+          <div class="shine"></div><div class="play"></div>
+          <div class="cmeta"><div class="ct">${c.t}</div><div class="cd">${c.d}</div></div>
+        </div>`).join('')}</div>`
+    : `<div class="empty"><b>Prochainement</b>Les cinématiques de cet arc seront bientôt projetées ici.</div>`;
+  const count = items.length ? `${items.length} cinématique${items.length>1?'s':''}` : 'à venir';
+  return `<button class="archead" style="--arc:${a.color}" data-arc="${a.id}">
+      <span class="dot"></span><span class="arcname">${a.name}</span>
+      <span class="arccount">${count}</span><span class="archev">⌄</span>
+    </button>
+    <div class="arcpanel" id="cinePanel-${a.id}">${body}</div>`;
+}).join('');
+document.querySelectorAll('#cineArcs .archead').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    const panel=document.getElementById('cinePanel-'+btn.dataset.arc);
+    const isOpen=btn.classList.contains('open');
+    document.querySelectorAll('#cineArcs .archead.open').forEach(b=>{
+      b.classList.remove('open');
+      document.getElementById('cinePanel-'+b.dataset.arc).style.maxHeight='0px';
+    });
+    if(!isOpen){
+      btn.classList.add('open');
+      panel.querySelectorAll('.cine[data-bg]').forEach(el=>{
+        el.style.backgroundImage=`linear-gradient(rgba(2,10,12,.25),rgba(2,10,12,.25)),url('${el.dataset.bg}')`;
+        el.removeAttribute('data-bg');
+      });
+      panel.style.maxHeight=panel.scrollHeight+'px';
+      setTimeout(()=>{ if(btn.classList.contains('open'))panel.style.maxHeight=panel.scrollHeight+'px'; },300);
+    }
+  });
+});
+function capOf(g){
+  if(g.titre||g.artiste) return {title:g.titre||'Sans titre',sub:g.artiste?`par ${g.artiste}`:''};
+  return {title:g.cap||'',sub:''};
+}
+document.getElementById('galArcs').innerHTML=ARCS.map(a=>{
+  const items=GALLERY[a.id]||[];
+  const body=items.length
+    ? `<div class="masonry">${items.map(g=>{const c=capOf(g);return `
+        <figure class="tile" data-title="${c.title}" data-sub="${c.sub}" data-img="${g.img}"><img src="${g.img}" alt="${c.title}" loading="lazy"></figure>`;}).join('')}</div>`
+    : `<div class="empty"><b>Galerie en préparation</b>Les fan arts et concept arts de cet arc arriveront bientôt.</div>`;
+  const count = items.length ? `${items.length} image${items.length>1?'s':''}` : 'à venir';
+  return `<button class="archead" style="--arc:${a.color}" data-arc="${a.id}">
+      <span class="dot"></span><span class="arcname">${a.name}</span>
+      <span class="arccount">${count}</span><span class="archev">⌄</span>
+    </button>
+    <div class="arcpanel" id="galPanel-${a.id}">${body}</div>`;
+}).join('');
+document.querySelectorAll('#galArcs .archead').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    const panel=document.getElementById('galPanel-'+btn.dataset.arc);
+    const isOpen=btn.classList.contains('open');
+    document.querySelectorAll('#galArcs .archead.open').forEach(b=>{
+      b.classList.remove('open');
+      document.getElementById('galPanel-'+b.dataset.arc).style.maxHeight='0px';
+    });
+    if(!isOpen){
+      btn.classList.add('open');
+      panel.style.maxHeight=panel.scrollHeight+'px';
+      panel.querySelectorAll('img').forEach(img=>{
+        if(!img.complete)img.addEventListener('load',()=>{ if(btn.classList.contains('open'))panel.style.maxHeight=panel.scrollHeight+'px'; },{once:true});
+      });
+    }
+  });
+});
+/* ================= OVERLAYS ================= */
+function openOv(id){document.getElementById(id).classList.add('open');document.body.style.overflow='hidden';if(typeof SND!=='undefined'&&SND.on)SND.open()}
+function closeOv(id){document.getElementById(id).classList.remove('open');document.body.style.overflow='';if(typeof SND!=='undefined'&&SND.on)SND.close();if(id==='charSheet')stopOst();}
+function formIsDirty(){
+  const ids=['fName','fQuote','fDesc','fPerso','fFun','fOst'];
+  if(ids.some(id=>document.getElementById(id).value.trim()))return true;
+  if([...document.querySelectorAll('#fArcs input:checked')].length)return true;
+  if([...document.querySelectorAll('#fRels .relrow input')].some(i=>i.value.trim()))return true;
+  if([...document.querySelectorAll('#fLinks .linkrow input')].some(i=>i.value.trim()))return true;
+  if(fImgData)return true;
+  return false;
+}
+function tryClose(id){
+  if(id==='charForm' && formIsDirty()){
+    if(!confirm('Êtes-vous sûr de vouloir quitter la création de ce personnage ?\n\nToutes les informations saisies seront perdues.'))return;
+  }
+  closeOv(id);
+}
+document.querySelectorAll('.ovclose').forEach(b=>b.addEventListener('click',()=>tryClose(b.dataset.close)));
+addEventListener('keydown',e=>{if(e.key==='Escape')document.querySelectorAll('.overlay.open').forEach(o=>tryClose(o.id))});
+const lore=s=>(s||'').replace(/\[\[([^\]|]+)\|([^\]]+)\]\]/g,'<button class="lore" data-codex="$1">$2</button>');
+let curWorld=null;
+function showCodex(entry){
+  document.getElementById('codexPanel').innerHTML=`
+    <div class="eyebrow">${entry.type||'Archive'}</div>
+    <h2>${entry.name}</h2>
+    ${entry.desc?`<div class="lead" style="margin-top:1.2rem">${entry.desc}</div>`:`<div class="empty" style="margin-top:2.4rem"><b>Coming soon</b>Cette archive sera déclassifiée prochainement…</div>`}
+    ${entry.imgs&&entry.imgs.length?`<div class="ovsec"><h4>Visuels</h4><div class="ovgal">${entry.imgs.map(x=>{const c=capOf(typeof x==='string'?{img:x}:x);return `<img src="${x.img||x}" data-img="${x.img||x}" data-title="${c.title||entry.name}" data-sub="${c.sub}" alt="">`;}).join('')}</div></div>`:''}`;
+  openOv('codexSheet');
+}
+const PEEK_FALLBACK={
+  ft1:`<svg class="face" viewBox="0 0 8 8" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges"><rect width="8" height="8" fill="#20343a"/><rect x="1" y="1" width="6" height="3" fill="#0e6e64"/><rect x="1" y="4" width="6" height="3" fill="#e8c9a8"/><rect x="2" y="4" width="1" height="1" fill="#0b1d20"/><rect x="5" y="4" width="1" height="1" fill="#0b1d20"/><rect x="3" y="6" width="2" height="1" fill="#a86e50"/></svg>`,
+  ft2:`<svg class="face" viewBox="0 0 8 8" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges"><rect width="8" height="8" fill="#141a2e"/><rect x="1" y="1" width="6" height="3" fill="#2d3f77"/><rect x="1" y="4" width="6" height="3" fill="#d9b8ff"/><rect x="2" y="4" width="1" height="1" fill="#0b0f20"/><rect x="5" y="4" width="1" height="1" fill="#0b0f20"/><rect x="2" y="6" width="4" height="1" fill="#6a4b9e"/></svg>`,
+  mantes:`<svg class="face" viewBox="0 0 8 8" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges"><rect width="8" height="8" fill="#2e2210"/><rect x="1" y="1" width="6" height="3" fill="#b8741f"/><rect x="1" y="4" width="6" height="3" fill="#e8c9a8"/><rect x="2" y="4" width="1" height="1" fill="#1d1408"/><rect x="5" y="4" width="1" height="1" fill="#1d1408"/><rect x="3" y="6" width="2" height="1" fill="#a86e50"/></svg>`,
+  circus:`<svg class="face" viewBox="0 0 8 8" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges"><rect width="8" height="8" fill="#301212"/><rect x="1" y="1" width="6" height="2" fill="#ff6b6b"/><rect x="1" y="3" width="6" height="4" fill="#f3f3f3"/><rect x="2" y="4" width="1" height="1" fill="#7a1414"/><rect x="5" y="4" width="1" height="1" fill="#7a1414"/><rect x="3" y="6" width="2" height="1" fill="#e0475b"/></svg>`
+};
+document.querySelectorAll('.world').forEach(w=>{
+  const peek=w.querySelector('.peek');
+  if(peek){
+    w.addEventListener('mouseenter',()=>{
+      const id=w.dataset.world;
+      const pool=CHARS.filter(c=>(c.arcs||[]).includes(id));
+      if(pool.length){
+        const c=pool[Math.floor(Math.random()*pool.length)];
+        peek.innerHTML=c.img?`<img class="face" src="${c.img}" alt="${c.name}">`:pixelFace(c.face);
+      }else{
+        peek.innerHTML=PEEK_FALLBACK[id]||'';
+      }
+    });
+  }
+});
+/* ---- teaser de la faille scellée ---- */
+window.FVduck=d=>SND.duck(d);
+window.FVmarkTorn=function(w){
+  w=w||document.querySelector('.world.mystery'); if(!w)return;
+  w.classList.add('torn');
+  const i=w.querySelector('.winfo'), e=w.querySelector('.wenter');
+  if(i)i.textContent="Les coutures sont défaites. Quelqu'un attend de l'autre côté.";
+  if(e)e.textContent="Ils arrivent bientôt…";
+};
+try{ if(localStorage.getItem('fv_teaser')==='1') window.FVmarkTorn(); }catch(e){}
+let teaserState=0;   /* 0 = pas chargé, 1 = en cours, 2 = prêt */
+function loadTeaser(cb){
+  if(teaserState===2){ cb&&cb(); return; }
+  if(teaserState===1)return;
+  teaserState=1;
+  const sc=document.createElement('script'); sc.src='js/teaser.js';
+  sc.onload=()=>{ teaserState=2; cb&&cb(); };
+  sc.onerror=()=>{ teaserState=0; if(typeof SND!=='undefined'&&SND.on)SND.sealed(); };
+  document.body.appendChild(sc);
+}
+document.querySelectorAll('.world.mystery').forEach(m=>{
+  m.addEventListener('pointerenter',()=>loadTeaser(),{once:true});   /* préchargé dès le survol : prêt au clic */
+  m.addEventListener('click',()=>loadTeaser(()=>window.FVTeaser&&window.FVTeaser.run(m)));
+});
+function riftFlash(w,color){
+  if(reduced)return;
+  const r=w.querySelector('.rift').getBoundingClientRect();
+  const f=document.createElement('div'); f.className='riftflash';
+  f.style.setProperty('--fx',(r.left+r.width/2)+'px');
+  f.style.setProperty('--fy',(r.top+r.height/2)+'px');
+  f.style.setProperty('--fc',color);
+  document.body.appendChild(f); setTimeout(()=>f.remove(),900);
+}
+document.querySelectorAll('.world').forEach(w=>w.addEventListener('click',()=>{
+  const d=WORLDS[w.dataset.world];
+  if(!d)return;
+  riftFlash(w,d.accent);
+  curWorld=w.dataset.world;
+  document.documentElement.style.setProperty('--accent',d.accent);
+  if(d.soon){
+    const wc=CHARS.filter(c=>(c.arcs||[]).includes(w.dataset.world));
+    const soonBox=(t)=>`<div class="ovsec"><h4>${t}</h4><div class="empty"><b>Coming soon</b>Cette section sera bientôt remplie.</div></div>`;
+    document.getElementById('worldPanel').innerHTML=`
+      <div class="eyebrow">${d.eyebrow}</div>
+      <h2>${d.title}</h2>
+      <p class="lead" style="font-size:1.15rem;color:var(--white);font-weight:400">${d.tag}</p>
+      <div class="lead" style="margin-top:1.2rem">${lore(d.desc)}</div>
+      <div class="ovsec"><h4>Personnages</h4>
+        ${wc.length?`<div class="chips">${wc.map(c=>`<button class="chip link" data-char-id="${c.id}">${c.name} ↗</button>`).join('')}</div>`
+          :`<p class="lead" style="font-style:italic;color:var(--dim)">Aucun habitant pour l'instant — soyez le premier à franchir la faille.</p>`}
+        <button class="btn solid" id="worldAddChar" data-arc="${w.dataset.world}" style="margin-top:1.4rem">+ Ajouter mon personnage à cette faille</button>
+      </div>
+      ${soonBox('Chronologie')}${soonBox('Archives')}${soonBox('Cinématiques')}${soonBox('Galerie du monde')}`;
+    openOv('worldOverlay');
+    return;
+  }
+  document.getElementById('worldPanel').innerHTML=`
+    <div class="eyebrow">${d.eyebrow}</div>
+    <h2>${d.title}</h2>
+    <p class="lead" style="font-size:1.15rem;color:var(--white);font-weight:400">${d.tag}</p>
+    <div class="lead" style="margin-top:1.2rem">${lore(d.desc)}</div>
+    <div class="ovsec"><h4>Chronologie</h4>
+      <div class="timeline">${d.tl.map(([t,s])=>`<div class="tl"><b>${t}</b><span>${lore(s)}</span></div>`).join('')}</div>
+    </div>
+    <div class="ovsec"><h4>Archives</h4>
+      ${(cx=>cx.length?`<div class="codexgrid">${cx.map(x=>`
+        <button class="codexcard" data-codex="${x.id}">
+          <span class="ctype">${x.type||'Entrée'}</span>
+          <span class="cxname">${x.name}</span>
+        </button>`).join('')}</div>`
+        :`<div class="empty"><b>Archives en préparation</b>Les secrets de ce monde — lieux, factions, mystères — seront consignés ici au fil des révélations.</div>`)(d.codex||[])}
+    </div>
+    <div class="ovsec"><h4>Personnages liés</h4>
+      ${(()=>{const wc=CHARS.filter(c=>(c.arcs||[]).includes(w.dataset.world));
+        return wc.length?`<div class="chips">${wc.map(c=>`<button class="chip link" data-char-id="${c.id}">${c.name} ↗</button>`).join('')}</div>`
+        :`<p class="lead" style="font-style:italic;color:var(--dim)">Les habitants de ce monde seront bientôt révélés.</p>`})()}
+    </div>
+    <div class="ovsec"><h4>Cinématiques</h4>
+      ${(cs=>cs.length?`<div class="cinerow">${cs.map(c=>`
+        <div class="cine" data-yt="${c.yt||''}" style="background-image:linear-gradient(rgba(2,10,12,.25),rgba(2,10,12,.25)),url('${c.img}')">
+          <span class="badge">${c.badge}</span><div class="shine"></div><div class="play"></div>
+          <div class="cmeta"><div class="ct">${c.t}</div><div class="cd">${c.d}</div></div>
+        </div>`).join('')}</div>`
+        :`<div class="empty"><b>Prochainement</b>Les cinématiques de cet arc seront bientôt projetées ici.</div>`)(CINES[w.dataset.world]||[])}
+    </div>
+    <div class="ovsec"><h4>Galerie du monde</h4>
+      ${(g=>g.length?`<div class="ovgal">${g.map(x=>{const c=capOf(x);return `<img src="${x.img}" alt="${c.title}" data-title="${c.title}" data-sub="${c.sub}" data-img="${x.img}">`;}).join('')}</div>`
+        :`<div class="empty"><b>En préparation</b>Les visuels de ce monde arriveront bientôt.</div>`)(GALLERY[w.dataset.world]||[])}
+    </div>`;
+  openOv('worldOverlay');
+}));
+document.getElementById('worldPanel').addEventListener('click',e=>{
+  const addBtn=e.target.closest('#worldAddChar');
+  if(addBtn){
+    pendingArc=addBtn.dataset.arc;
+    closeOv('worldOverlay');
+    document.getElementById('pwErr').textContent='';
+    document.getElementById('pwInput').value='';
+    openOv('pwGate');
+    setTimeout(()=>document.getElementById('pwInput').focus(),150);
+    return;
+  }
+  if(e.target.closest('[data-goto-chars]')){
+    closeOv('worldOverlay');
+    document.getElementById('personnages').scrollIntoView({behavior:'smooth'});
+    return;
+  }
+  const cx=e.target.closest('[data-codex]');
+  if(cx){
+    const entry=(WORLDS[curWorld]?.codex||[]).find(x=>x.id===cx.dataset.codex);
+    if(entry)showCodex(entry);
+    return;
+  }
+  const im=e.target.closest('.ovgal img');
+  if(im){showLightbox(im.dataset.img,im.dataset.title,im.dataset.sub);return;}
+  const b=e.target.closest('.chip.link'); if(!b)return;
+  const c=CHARS.find(x=>x.id===b.dataset.charId);
+  if(c){closeOv('worldOverlay');showChar(c);}
+});
+/* ================= OST DES FICHES PERSONNAGES ================= */
+function ytId(url){
+  if(!url)return null;
+  const m=url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|shorts\/))([\w-]{6,})/);
+  return m?m[1]:null;
+}
+let ostWasAmbientOn=false, ostFrame=null;
+const ostPrompt=document.getElementById('ostPrompt');
+function stopOst(){
+  ostPrompt.classList.remove('show');
+  if(ostFrame){ostFrame.remove();ostFrame=null;
+    if(ostWasAmbientOn&&typeof SND!=='undefined'&&!SND.on)setSnd(true);
+  }
+}
+function playOst(id){
+  if(typeof SND!=='undefined'&&SND.on){ostWasAmbientOn=true;setSnd(false);}else{ostWasAmbientOn=false;}
+  ostFrame=document.createElement('iframe');
+  ostFrame.width='1';ostFrame.height='1';ostFrame.style.cssText='position:fixed;bottom:0;right:0;opacity:0;pointer-events:none';
+  ostFrame.allow='autoplay';
+  ostFrame.src=`https://www.youtube.com/embed/${id}?autoplay=1&controls=0&loop=1&playlist=${id}`;
+  document.body.appendChild(ostFrame);
+  ostPrompt.classList.remove('show');
+}
+document.getElementById('ostYes').addEventListener('click',()=>{
+  if(ostPrompt.dataset.pendingId)playOst(ostPrompt.dataset.pendingId);
+});
+document.getElementById('ostNo').addEventListener('click',()=>ostPrompt.classList.remove('show'));
+function showChar(c){
+  stopOst();
+  document.documentElement.style.setProperty('--accent',c.glow);
+  const relHtml = c.rel.length
+    ? `<div class="chips">${c.rel.map(r=>Array.isArray(r)
+        ?`<button class="chip link" data-goto="${r[1]}">${r[0]} ↗</button>`
+        :`<span class="chip">${r}</span>`).join('')}</div>`
+    : `<p class="lead" style="font-style:italic;color:var(--dim)">Aucune relation connue… pour le moment.</p>`;
+  document.getElementById('charPanel').innerHTML=`
+    <div class="sheettop">
+      ${visual(c)}
+      <div>
+        <div class="eyebrow">${c.rp}</div>
+        <h2>${c.name}</h2>
+        <blockquote>${c.quote}</blockquote>
+      </div>
+    </div>
+    <div class="ovsec"><h4>Histoire</h4><div class="lead">${lore(c.desc)}</div></div>
+    ${c.perso?`<div class="ovsec"><h4>Personnalité</h4><p class="lead">${c.perso}</p></div>`:''}
+    <div class="ovsec"><h4>Relations</h4>${relHtml}</div>
+    <div class="ovsec"><h4>Anecdotes</h4>
+      <ul class="funlist">${c.fun.map(f=>`<li>${f}</li>`).join('')}</ul>
+    </div>
+    ${(c.links&&c.links.length)?`<div class="ovsec"><h4>Liens</h4>
+      <div class="chips">${c.links.map(l=>`<a class="chip link" href="${l.url}" target="_blank" rel="noopener">${l.titre} ↗</a>`).join('')}</div>
+    </div>`:''}`;
+  document.getElementById('charSheet').scrollTop=0;
+  openOv('charSheet');
+  const vid=ytId(c.ost);
+  if(vid){
+    ostPrompt.dataset.pendingId=vid;
+    setTimeout(()=>ostPrompt.classList.add('show'),500);
+  }
+}
+cg.addEventListener('click',e=>{
+  const el=e.target.closest('.char'); if(!el)return;
+  if(el.dataset.char===undefined)return; /* cartes "Ajouter" / "Modifier" : gérées par leurs propres écouteurs */
+  showChar(CHARS[+el.dataset.char]);
+});
+document.getElementById('charPanel').addEventListener('click',e=>{
+  const b=e.target.closest('.chip.link'); if(!b)return;
+  const c=CHARS.find(x=>x.id===b.dataset.goto);
+  if(c) showChar(c);
+});
+document.getElementById('codexPanel').addEventListener('click',e=>{
+  const im=e.target.closest('.ovgal img'); if(!im)return;
+  showLightbox(im.dataset.img,im.dataset.title,im.dataset.sub);
+});
+document.getElementById('galArcs').addEventListener('click',e=>{
+  const t=e.target.closest('.tile'); if(!t)return;
+  showLightbox(t.dataset.img,t.dataset.title,t.dataset.sub);
+});
+function showLightbox(src,title,sub){
+  document.getElementById('lbimg').src=src;
+  document.getElementById('lbcap').innerHTML=`${title?`<b>${title}</b>`:''}${sub?`<br><span>${sub}</span>`:''}`;
+  openOv('lightbox');
+}
+/* ================= AJOUT DE PERSONNAGE ================= */
+document.getElementById('pwOk').addEventListener('click',checkPw);
+document.getElementById('pwInput').addEventListener('keydown',e=>{if(e.key==='Enter')checkPw()});
+async function sha256Hex(str){
+  const buf=await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+  return [...new Uint8Array(buf)].map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+async function checkPw(){
+  const v=document.getElementById('pwInput').value.trim();
+  const h=await sha256Hex(v);
+  if(h===PASS_HASH){
+    closeOv('pwGate'); openForm();
+  }else{
+    const box=document.getElementById('pwBox');
+    document.getElementById('pwErr').textContent='Mot de passe incorrect';
+    box.classList.remove('err'); void box.offsetWidth; box.classList.add('err');
+  }
+}
+const ARC_SHORT={ft1:'FreakyTown S1',ft2:'FreakyTown S2',circus:'Digital Circus',mantes:'Mantes-la-Jolie'};
+function rpLabel(arcs){
+  if(arcs.length===2&&arcs.includes('ft1')&&arcs.includes('ft2'))return 'FreakyTown — Saisons 1 & 2';
+  return arcs.map(a=>ARC_SHORT[a]).join(' · ');
+}
+function relRow(){
+  const d=document.createElement('div');d.className='relrow';
+  d.innerHTML=`<input placeholder="ex : Allié de… / Rivalité avec…">
+    <select><option value="">— aucun lien —</option>${CHARS.map(c=>`<option value="${c.id}">${c.name}</option>`).join('')}</select>
+    <button type="button" title="Retirer">✕</button>`;
+  d.querySelector('button').addEventListener('click',()=>d.remove());
+  return d;
+}
+document.getElementById('fAddRel').addEventListener('click',()=>document.getElementById('fRels').appendChild(relRow()));
+function linkRow(){
+  const d=document.createElement('div');d.className='linkrow';
+  d.innerHTML=`<input placeholder="Titre du lien (ex : Panel Pinterest)">
+    <input placeholder="https://…">
+    <button type="button" title="Retirer">✕</button>`;
+  d.querySelector('button').addEventListener('click',()=>d.remove());
+  return d;
+}
+document.getElementById('fAddLink').addEventListener('click',()=>document.getElementById('fLinks').appendChild(linkRow()));
+let fImgData=null, fImgPending=false;
+document.getElementById('fImg').addEventListener('change',e=>{
+  const f=e.target.files[0]; if(!f)return;
+  if(f.size>2.5*1024*1024){document.getElementById('fErr').textContent='Image trop lourde (max 2,5 Mo)';e.target.value='';return}
+  const saveBtn=document.getElementById('fSave');
+  fImgPending=true; saveBtn.disabled=true; saveBtn.textContent="Chargement de l'image…";
+  const r=new FileReader();
+  r.onload=()=>{
+    fImgData=r.result;
+    const p=document.getElementById('fImgPrev');p.src=fImgData;p.style.display='block';
+    fImgPending=false; saveBtn.disabled=false; saveBtn.textContent='Enregistrer mon personnage';
+  };
+  r.onerror=()=>{
+    fImgPending=false; saveBtn.disabled=false; saveBtn.textContent='Enregistrer mon personnage';
+    document.getElementById('fErr').textContent="Erreur de lecture de l'image, réessayez";
+  };
+  r.readAsDataURL(f);
+});
+/* ---- gestion des identifiants d'édition (pas de vrais comptes : un code secret par fiche) ---- */
+const MYCHARS_KEY='fv_my_chars';
+function myChars(){try{return JSON.parse(localStorage.getItem(MYCHARS_KEY)||'[]')}catch(e){return []}}
+function saveMyChar(id,name,code){
+  const list=myChars(); list.push({id,name,code});
+  try{localStorage.setItem(MYCHARS_KEY, JSON.stringify(list))}catch(e){}
+}
+function randomEditCode(){
+  const bytes=crypto.getRandomValues(new Uint8Array(9));
+  return [...bytes].map(b=>b.toString(36)).join('').slice(0,12);
+}
+
+let editMode=null; /* null = création ; sinon {id, code} = modification en cours */
+
+function fillForm(data){
+  document.getElementById('fName').value=data.name||'';
+  document.getElementById('fQuote').value=(data.quote||'').replace(/^[«"\s]+|[»"\s]+$/g,'');
+  const tmp=document.createElement('div'); tmp.innerHTML=data.desc||'';
+  document.getElementById('fDesc').value=[...tmp.querySelectorAll('p')].map(p=>p.innerHTML.replace(/<br\s*\/?>/g,'\n')).join('\n\n')||tmp.textContent||'';
+  document.getElementById('fPerso').value=data.perso||'';
+  document.getElementById('fFun').value=(data.fun||[]).join('\n');
+  document.getElementById('fOst').value=data.ost||'';
+  document.getElementById('fColor').value=data.glow||'#3fe8d8';
+  document.querySelectorAll('#fArcs input').forEach(i=>i.checked=(data.arcs||[]).includes(i.value));
+  const rels=document.getElementById('fRels'); rels.innerHTML='';
+  (data.rel&&data.rel.length ? data.rel : [null]).forEach(r=>{
+    const row=relRow(); rels.appendChild(row);
+    if(r){
+      const inputs=row.querySelectorAll('input,select');
+      if(Array.isArray(r)){ row.querySelector('input').value=r[0]; row.querySelector('select').value=r[1]||''; }
+      else{ row.querySelector('input').value=r; }
+    }
+  });
+  const lks=document.getElementById('fLinks'); lks.innerHTML='';
+  (data.links&&data.links.length ? data.links : [null]).forEach(l=>{
+    const row=linkRow(); lks.appendChild(row);
+    if(l){ const inputs=row.querySelectorAll('input'); inputs[0].value=l.titre||''; inputs[1].value=l.url||''; }
+  });
+  if(data.img){ fImgData=data.img; const p=document.getElementById('fImgPrev'); p.src=data.img; p.style.display='block'; }
+}
+
+function openForm(){
+  editMode=null;
+  fImgData=null;
+  document.getElementById('fErr').textContent='';
+  document.getElementById('fImgPrev').style.display='none';
+  ['fName','fQuote','fDesc','fPerso','fFun','fOst'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('fImg').value='';
+  document.getElementById('fColor').value='#3fe8d8';
+  document.querySelectorAll('#fArcs input').forEach(i=>i.checked=false);
+  const rels=document.getElementById('fRels');rels.innerHTML='';rels.appendChild(relRow());
+  const lks=document.getElementById('fLinks');lks.innerHTML='';lks.appendChild(linkRow());
+  if(pendingArc){ document.querySelectorAll('#fArcs input').forEach(i=>{ if(i.value===pendingArc) i.checked=true; }); pendingArc=null; }
+  document.querySelector('#charForm h2').innerHTML='Rejoindre le <em style="font-style:normal;color:var(--glow)">multivers</em>';
+  document.getElementById('fSave').textContent='Enregistrer mon personnage';
+  openOv('charForm');
+}
+
+function openEditForm(row, code){
+  editMode={id:row.id, code};
+  fImgData=null;
+  document.getElementById('fErr').textContent='';
+  document.getElementById('fImgPrev').style.display='none';
+  document.getElementById('fImg').value='';
+  fillForm({
+    name:row.nom, quote:row.citation, desc:row.histoire, perso:row.personnalite,
+    fun:row.anecdotes, ost:row.ost, glow:row.glow, arcs:row.arcs,
+    rel:row.relations, links:row.liens, img:row.img
+  });
+  document.querySelector('#charForm h2').innerHTML=`Modifier <em style="font-style:normal;color:var(--glow)">${row.nom}</em>`;
+  document.getElementById('fSave').textContent='Enregistrer les modifications';
+  closeOv('editGate');
+  openOv('charForm');
+}
+
+document.getElementById('fSave').addEventListener('click',()=>{
+  const name=document.getElementById('fName').value.trim();
+  const arcs=[...document.querySelectorAll('#fArcs input:checked')].map(i=>i.value);
+  const err=document.getElementById('fErr');
+  if(fImgPending){err.textContent="Patientez, l'image est encore en cours de traitement…";return}
+  if(!name){err.textContent='Le nom est obligatoire';return}
+  if(!arcs.length){err.textContent='Choisissez au moins un univers';return}
+  err.textContent='';
+  const glow=document.getElementById('fColor').value;
+  const quote=document.getElementById('fQuote').value.trim();
+  const desc=document.getElementById('fDesc').value.trim().split(/\n\s*\n/).filter(Boolean).map(p=>`<p>${p.replace(/\n/g,'<br>')}</p>`).join('')||'<p>Histoire à venir…</p>';
+  const perso=document.getElementById('fPerso').value.trim();
+  const fun=document.getElementById('fFun').value.split('\n').map(s=>s.trim()).filter(Boolean);
+  const rel=[...document.querySelectorAll('#fRels .relrow')].map(r=>{
+    const label=r.querySelector('input').value.trim();
+    const to=r.querySelector('select').value;
+    if(!label)return null;
+    return to?[label,to]:label;
+  }).filter(Boolean);
+  const ost=document.getElementById('fOst').value.trim()||null;
+  const links=[...document.querySelectorAll('#fLinks .linkrow')].map(r=>{
+    const inputs=r.querySelectorAll('input');
+    const titre=inputs[0].value.trim(), url=inputs[1].value.trim();
+    return (titre&&url)?{titre,url}:null;
+  }).filter(Boolean);
+  const finalQuote=quote?`« ${quote.replace(/^[«"\s]+|[»"\s]+$/g,'')} »`:'';
+
+  if(editMode){
+    /* ---- MODIFICATION D'UNE FICHE EXISTANTE (via fonction RPC, plus fiable qu'un en-tête HTTP) ---- */
+    const row={nom:name,arcs,rp:rpLabel(arcs),glow,citation:finalQuote,histoire:desc,
+      personnalite:perso,relations:rel,anecdotes:fun,img:fImgData||null,ost,liens:links};
+    const btn=document.getElementById('fSave');
+    btn.disabled=true;btn.textContent='Envoi en cours…';
+    fetch(SB_URL+'/rest/v1/rpc/update_personnage',{
+      method:'POST',
+      headers:sbHeaders,
+      body:JSON.stringify({p_id:editMode.id, p_code:editMode.code, p_data:row})
+    }).then(async r=>{
+        if(!r.ok)throw new Error(r.status);
+        const updated=await r.json();
+        if(!updated.length) throw new Error('no-row-matched');
+        closeOv('charForm');
+        document.getElementById('sentOkTitle').textContent='Modifications envoyées ✦';
+        document.getElementById('sentOkMsg').textContent="Vos modifications sont en ligne dès maintenant.";
+        document.getElementById('sentOkCreds').style.display='none';
+        openOv('sentOk');
+      })
+      .catch(()=>{err.textContent="Échec de l'envoi — identifiant ou code d'édition incorrect";})
+      .finally(()=>{btn.disabled=false;btn.textContent='Enregistrer les modifications';editMode=null;});
+    return;
+  }
+
+  /* ---- CRÉATION D'UNE NOUVELLE FICHE ---- */
+  const id=name.toLowerCase().replace(/[^a-z0-9]+/g,'-')+'-'+Date.now().toString(36);
+  const editCode=randomEditCode();
+  const c={id,name,arcs,rp:rpLabel(arcs),glow,quote:finalQuote,
+    desc,perso,rel,fun:fun.length?fun:['Nouveau visage du multivers.'],
+    img:fImgData||null,ost,links,
+    face:fImgData?null:{bg:'#0d2530',hair:glow,skin:'#e8c9a8',eye:'#0b1d20',mouth:'#a86e50'}};
+  if(SB_ON){
+    const row={id,nom:name,arcs,rp:rpLabel(arcs),glow,citation:c.quote,histoire:c.desc,
+      personnalite:c.perso,relations:c.rel,anecdotes:c.fun,img:c.img,face:c.face,ost:c.ost,liens:c.links,
+      edit_code:editCode,statut:'attente'};
+    const btn=document.getElementById('fSave');
+    btn.disabled=true;btn.textContent='Envoi en cours…';
+    fetch(SB_URL+'/rest/v1/personnages',{method:'POST',headers:sbHeaders,body:JSON.stringify(row)})
+      .then(r=>{
+        if(!r.ok)throw new Error(r.status);
+        saveMyChar(id,name,editCode);
+        closeOv('charForm');
+        document.getElementById('sentOkTitle').textContent='Personnage envoyé ✦';
+        document.getElementById('sentOkMsg').textContent='Votre fiche a bien été transmise. Après validation par un administrateur, votre personnage apparaîtra dans la galerie du multivers — pour tout le monde.';
+        const credsBox=document.getElementById('sentOkCreds');
+        credsBox.style.display='block';
+        credsBox.innerHTML=`
+          <div class="hint" style="margin-top:1.2rem;color:#ff7a8a;font-weight:500">⚠ Notez bien ceci, il ne sera plus jamais réaffiché :</div>
+          <div style="background:rgba(0,0,0,.3);border-radius:10px;padding:.9rem;margin-top:.6rem;font-family:'Space Mono',monospace;font-size:.78rem;line-height:1.9;text-align:left">
+            Identifiant : <b>${id}</b><br>Code d'édition : <b>${editCode}</b>
+          </div>
+          <button class="addbtn" id="copyCreds" style="margin-top:.7rem;width:100%">Copier ces informations</button>`;
+        document.getElementById('copyCreds').addEventListener('click',()=>{
+          navigator.clipboard.writeText(`Identifiant : ${id}\nCode d'édition : ${editCode}`).catch(()=>{});
+          document.getElementById('copyCreds').textContent='Copié ✓';
+        });
+        openOv('sentOk');
+      })
+      .catch(()=>{err.textContent="Échec de l'envoi — vérifiez votre connexion et réessayez";})
+      .finally(()=>{btn.disabled=false;btn.textContent='Enregistrer mon personnage';});
+  }else{
+    CHARS.push(c);
+    SAVED.push(c); persist(SAVED);
+    renderChars();
+    closeOv('charForm');
+    showChar(c);
+  }
+});
+
+/* ---- ouverture de la porte "Modifier mon personnage" ---- */
+document.getElementById('editGo').addEventListener('click',async ()=>{
+  const id=document.getElementById('editId').value.trim();
+  const code=document.getElementById('editCode').value.trim();
+  const eerr=document.getElementById('editErr');
+  if(!id||!code){eerr.textContent='Remplissez les deux champs';return}
+  eerr.textContent='';
+  const btn=document.getElementById('editGo');
+  btn.disabled=true;btn.textContent='Recherche…';
+  try{
+    const res=await fetch(SB_URL+'/rest/v1/rpc/get_personnage_for_edit',{
+      method:'POST', headers:sbHeaders,
+      body:JSON.stringify({p_id:id, p_code:code})
+    });
+    if(!res.ok)throw new Error(res.status);
+    const rows=await res.json();
+    if(!rows.length){eerr.textContent='Identifiant ou code incorrect';return}
+    openEditForm(rows[0], code);
+  }catch(e){
+    eerr.textContent='Identifiant ou code incorrect';
+  }finally{
+    btn.disabled=false;btn.textContent='Retrouver ma fiche';
+  }
+});
+/* ================= SOUND DESIGN (Web Audio, 100% procédural) ================= */
+const SND=(()=>{
+  let ctx=null,master=null,verb=null,on=false;
+  let droneNodes=[],windNodes=[],sparkTimer=null;
+  function makeImpulse(seconds=2.8,decay=3.2){
+    const rate=ctx.sampleRate,len=rate*seconds,buf=ctx.createBuffer(2,len,rate);
+    for(let ch=0;ch<2;ch++){const d=buf.getChannelData(ch);
+      for(let i=0;i<len;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/len,decay);}
+    return buf;
+  }
+  function init(){
+    if(ctx)return;
+    ctx=new (window.AudioContext||window.webkitAudioContext)();
+    master=ctx.createGain();master.gain.value=0;master.connect(ctx.destination);
+    verb=ctx.createConvolver();verb.buffer=makeImpulse();
+    const vg=ctx.createGain();vg.gain.value=.5;
+    verb.connect(vg);vg.connect(master);
+  }
+  const SCALE=[440,493.88,554.37,659.25,739.99,880,987.77,1108.73,1318.5];
+  function chime(f,vol=.03,dur=3){
+    if(!on)return;
+    const now=ctx.currentTime;
+    [[1,vol],[2,vol*.3],[3.01,vol*.12]].forEach(([mult,v])=>{
+      const o=ctx.createOscillator(),g=ctx.createGain();
+      o.type='sine';o.frequency.value=f*mult;
+      g.gain.setValueAtTime(0,now);
+      g.gain.linearRampToValueAtTime(v,now+.06);
+      g.gain.exponentialRampToValueAtTime(.0001,now+dur);
+      o.connect(g);g.connect(master);
+      const rg=ctx.createGain();rg.gain.value=1.2;g.connect(rg);rg.connect(verb);
+      o.start(now);o.stop(now+dur+.1);
+    });
+  }
+  function startAmbient(){
+    const pad=[[220,.014,.05],[330,.011,.037],[440,.009,.043],[554.37,.006,.031]];
+    pad.forEach(([f,g,rate])=>{
+      const o=ctx.createOscillator(),gn=ctx.createGain(),lfo=ctx.createOscillator(),lg=ctx.createGain();
+      o.type='sine';o.frequency.value=f;gn.gain.value=g*.4;
+      lfo.frequency.value=rate;lg.gain.value=g*.6;
+      lfo.connect(lg);lg.connect(gn.gain);
+      o.connect(gn);gn.connect(master);
+      const rg=ctx.createGain();rg.gain.value=.8;gn.connect(rg);rg.connect(verb);
+      o.start();lfo.start();droneNodes.push(o,lfo);
+    });
+    const nextNote=()=>{
+      if(on){
+        const f=SCALE[Math.floor(Math.random()*SCALE.length)];
+        chime(f,.022+Math.random()*.014,2.6+Math.random()*1.6);
+        if(Math.random()<.3)setTimeout(()=>chime(SCALE[Math.floor(Math.random()*SCALE.length)],.018,2.4),380+Math.random()*300);
+      }
+      sparkTimer=setTimeout(nextNote,2600+Math.random()*3800);
+    };
+    nextNote();
+    setInterval(()=>{if(on&&Math.random()<.5)sparkle();},9000);
+  }
+  function tone(f1,f2,dur,vol,type='sine',rev=.6){
+    if(!on)return;
+    const o=ctx.createOscillator(),g=ctx.createGain(),now=ctx.currentTime;
+    o.type=type;o.frequency.setValueAtTime(f1,now);
+    o.frequency.exponentialRampToValueAtTime(f2,now+dur);
+    g.gain.setValueAtTime(0,now);
+    g.gain.linearRampToValueAtTime(vol,now+.012);
+    g.gain.exponentialRampToValueAtTime(.0001,now+dur);
+    o.connect(g);g.connect(master);
+    if(rev){const rg=ctx.createGain();rg.gain.value=rev;g.connect(rg);rg.connect(verb);}
+    o.start(now);o.stop(now+dur+.05);
+  }
+  function whoosh(down=true,dur=.55,vol=.16){
+    if(!on)return;
+    const len=ctx.sampleRate*dur,nb=ctx.createBuffer(1,len,ctx.sampleRate),d=nb.getChannelData(0);
+    for(let i=0;i<len;i++)d[i]=(Math.random()*2-1)*(1-i/len);
+    const src=ctx.createBufferSource();src.buffer=nb;
+    const f=ctx.createBiquadFilter();f.type='lowpass';f.Q.value=1.1;
+    const now=ctx.currentTime;
+    f.frequency.setValueAtTime(down?2400:300,now);
+    f.frequency.exponentialRampToValueAtTime(down?260:2000,now+dur);
+    const g=ctx.createGain();g.gain.setValueAtTime(vol,now);
+    g.gain.exponentialRampToValueAtTime(.0001,now+dur);
+    src.connect(f);f.connect(g);g.connect(master);g.connect(verb);
+    src.start(now);
+  }
+  /* ---- FAILLE : un "bzzt-crac" électrique court et sec (~0,35 s) ---- */
+  let lastRift=0;
+  function riftNoise(dur,fn){
+    const sr=ctx.sampleRate, len=Math.floor(sr*dur), buf=ctx.createBuffer(1,len,sr), d=buf.getChannelData(0);
+    for(let i=0;i<len;i++) d[i]=(Math.random()*2-1)*fn(i/len);
+    const src=ctx.createBufferSource(); src.buffer=buf; return src;
+  }
+  function rift(){
+    if(!on)return;
+    const t=performance.now(); if(t-lastRift<900)return; lastRift=t;
+    const now=ctx.currentTime;
+    /* saturation : son sec et mordant */
+    const ws=ctx.createWaveShaper(), curve=new Float32Array(512);
+    for(let i=0;i<512;i++){const x=i/256-1; curve[i]=Math.tanh(x*5);}
+    ws.curve=curve; ws.connect(master);
+    const wsv=ctx.createGain(); wsv.gain.value=.22; ws.connect(wsv); wsv.connect(verb);
+
+    /* 1. le choc : un coup sourd qui donne du poids */
+    const th=ctx.createOscillator(), thg=ctx.createGain();
+    th.type='sine'; th.frequency.setValueAtTime(125,now); th.frequency.exponentialRampToValueAtTime(48,now+.14);
+    thg.gain.setValueAtTime(.2,now); thg.gain.exponentialRampToValueAtTime(.0001,now+.16);
+    th.connect(thg); thg.connect(master); th.start(now); th.stop(now+.2);
+
+    /* 2. deux "zaps" : la hauteur s'effondre en quelques centièmes de seconde */
+    [[0,3300,.1,.13],[.12,2400,.08,.08]].forEach(([dt,f0,len,vol])=>{
+      const at=now+dt, o=ctx.createOscillator(), g=ctx.createGain(), hp=ctx.createBiquadFilter();
+      o.type='sawtooth';
+      o.frequency.setValueAtTime(f0,at); o.frequency.exponentialRampToValueAtTime(170,at+len);
+      hp.type='highpass'; hp.frequency.value=300;
+      g.gain.setValueAtTime(vol,at); g.gain.exponentialRampToValueAtTime(.0001,at+len);
+      o.connect(hp); hp.connect(g); g.connect(ws);
+      o.start(at); o.stop(at+len+.02);
+    });
+
+    /* 3. le crépitement : des étincelles hachées qui s'éteignent vite */
+    const cr=riftNoise(.22,x=>(Math.random()<.35?1:.12)*Math.pow(1-x,1.8));
+    const chp=ctx.createBiquadFilter(); chp.type='highpass'; chp.frequency.value=2200;
+    const cg=ctx.createGain(); cg.gain.value=.4;
+    cr.connect(chp); chp.connect(cg); cg.connect(ws); cr.start(now+.02);
+  }
+  /* ---- FAILLE SCELLÉE : choc sourd + cliquetis de chaînes ---- */
+  let lastSeal=0;
+  function sealed(){
+    if(!on)return;
+    const t=performance.now(); if(t-lastSeal<900)return; lastSeal=t;
+    tone(80,52,.35,.14,'sine',.5);
+    for(let i=0;i<4;i++)setTimeout(()=>{
+      if(!on)return;
+      const o=ctx.createOscillator(), g=ctx.createGain(), bp=ctx.createBiquadFilter(), n=ctx.currentTime;
+      o.type='square'; o.frequency.value=1800+Math.random()*900;
+      bp.type='bandpass'; bp.frequency.value=2400; bp.Q.value=4;
+      g.gain.setValueAtTime(.035,n); g.gain.exponentialRampToValueAtTime(.0001,n+.05);
+      o.connect(bp); bp.connect(g); g.connect(master); o.start(n); o.stop(n+.06);
+    },70+i*85+Math.random()*40);
+  }
+  function sparkle(){
+    const base=900+Math.random()*1400;
+    tone(base,base*1.5,1.6,.028,'sine',1);
+    setTimeout(()=>tone(base*1.34,base*2,1.4,.02,'sine',1),140);
+  }
+  return {
+    enable(){
+      init();ctx.resume();
+      if(!droneNodes.length)startAmbient();
+      on=true;
+      master.gain.cancelScheduledValues(ctx.currentTime);
+      master.gain.setTargetAtTime(.5,ctx.currentTime,.8);
+    },
+    disable(){
+      if(!ctx)return;on=false;
+      master.gain.setTargetAtTime(0,ctx.currentTime,.25);
+    },
+    hover(){tone(520,760,.14,.045,'sine',.3)},
+    rift, sealed,
+    duck(d){ if(!ctx)return; master.gain.cancelScheduledValues(ctx.currentTime); master.gain.setTargetAtTime(d?.0001:(on?.5:0),ctx.currentTime,d?.08:.8); },
+    hoverWorld(){chime(SCALE[2],.035,1.8);setTimeout(()=>chime(SCALE[5],.025,1.6),90)},
+    click(){tone(340,220,.16,.06,'triangle',.4)},
+    open(){whoosh(false,.5,.14);setTimeout(()=>tone(660,990,.9,.04,'sine',1),120)},
+    close(){whoosh(true,.4,.11)},
+    swell(){chime(220,.04,3.4);setTimeout(()=>chime(440,.03,3),260);setTimeout(()=>sparkle(),700)},
+    get on(){return on}
+  };
+})();
+const sndBtn=document.getElementById('sndBtn'),sndTip=document.getElementById('sndTip');
+function setSnd(v){
+  if(v){SND.enable();sndBtn.classList.add('on');sndBtn.setAttribute('aria-label','Couper le son');}
+  else{SND.disable();sndBtn.classList.remove('on');sndBtn.setAttribute('aria-label','Activer le son');}
+  try{localStorage.setItem('fv_sound',v?'1':'0')}catch(e){}
+  sndTip.classList.remove('show');
+}
+sndBtn.addEventListener('click',()=>setSnd(!SND.on));
+sndTip.addEventListener('click',()=>{ if(sndTip.classList.contains('invite')) setSnd(true); });
+/* Les navigateurs interdisent tout son avant un geste explicite du visiteur —
+   impossible à contourner. On mise donc sur un bouton bien visible qui invite
+   clairement à cliquer, plutôt que d'essayer de deviner un geste discret. */
+let soundPref=null;
+try{soundPref=localStorage.getItem('fv_sound')}catch(e){}
+if(soundPref!=='0'){
+  sndBtn.classList.add('invite');
+  sndTip.classList.add('invite');
+  sndTip.textContent='🔊 Activer l\'ambiance sonore';
+  setTimeout(()=>sndTip.classList.add('show'), 1400);
+}
+const origSetSnd=setSnd;
+setSnd=function(v){
+  origSetSnd(v);
+  sndBtn.classList.remove('invite');
+  sndTip.classList.remove('invite');
+};
+let lastHover=0;
+document.addEventListener('pointerover',e=>{
+  if(!SND.on)return;
+  const world=e.target.closest('.world');
+  const el=e.target.closest('a,button,.char,.cine,.tile,.com,.hcard,.codexcard');
+  const tgt=world||el;
+  if(!tgt||tgt===e.relatedTarget||tgt.contains(e.relatedTarget))return;
+  const now=performance.now();
+  if(now-lastHover<70)return;lastHover=now;
+  if(world) (world.classList.contains('mystery') && !world.classList.contains('torn')) ? SND.sealed() : SND.rift();
+  else SND.hover();
+});
+document.addEventListener('click',e=>{
+  if(!SND.on)return;
+  if(e.target.closest('a,button,.char,.cine,.tile,.world,.com,.codexcard'))SND.click();
+});
+document.getElementById('burger').addEventListener('click',()=>document.getElementById('navlinks').classList.toggle('open'));
+document.querySelectorAll('.navlinks a').forEach(a=>a.addEventListener('click',()=>document.getElementById('navlinks').classList.remove('open')));
+document.addEventListener('click',e=>{
+  const cn=e.target.closest('.cine');
+  if(cn&&cn.dataset.yt)window.open(cn.dataset.yt,'_blank','noopener');
+});
