@@ -63,26 +63,29 @@ function injectCss(){
   .p-rire .c.v{animation:pwave 1s ease-in-out infinite;animation-delay:calc(var(--i)*70ms)}
   @keyframes pwave{0%,100%{transform:translateY(0)}50%{transform:translateY(-.12em)}}
   .p-guette .ptext{color:#86a5e6;font-size:clamp(1rem,2.2vw,1.6rem);opacity:.9}.p-guette .pname{color:#6fa8dc}
-  #possess .pscream{position:absolute;inset:0;display:none;place-items:center;text-align:center;padding:0 4vw;color:#ff1e1e;font-size:clamp(2.1rem,7.2vw,6.2rem);line-height:1.08;text-shadow:0 0 28px #f00,0 0 60px #800;pointer-events:none}
+  #possess .pscream{position:absolute;inset:0;display:none;place-items:center;text-align:center;padding:0 4vw;color:#fff1ee;font-size:clamp(2.1rem,7.2vw,6.2rem);line-height:1.08;text-shadow:0 3px 0 #300,0 0 14px #f00,0 0 34px #f00,0 0 70px #900;pointer-events:none}
   #possess .pscream.on{display:grid;animation:pscream .09s steps(2) infinite}
   @keyframes pscream{0%{transform:translate(-6px,3px) scale(1.02)}100%{transform:translate(6px,-3px) scale(1)}}
   #possess .pskip{position:absolute;right:1.4rem;bottom:1.2rem;font:inherit;font-size:.95rem;color:#8a8294;background:none;border:1px solid rgba(255,255,255,.18);padding:.4rem .9rem;cursor:pointer;opacity:0;transition:opacity 1s}
   #possess .pskip.show{opacity:.7}
-  #possess .porbs{position:absolute;inset:0;pointer-events:none}
-  #possess .po{position:absolute;width:var(--d);height:var(--d);border-radius:50%;opacity:0;
-    transform:translate(calc(-50% + var(--px,0px)*var(--k,1)),calc(-50% + var(--py,0px)*var(--k,1))) scale(.35);
-    background:radial-gradient(circle,#fff 0,#ffe3d2 12%,rgba(255,96,70,.95) 34%,rgba(200,20,30,.5) 58%,rgba(120,0,10,0) 76%);
-    box-shadow:0 0 calc(var(--d)*.7) calc(var(--d)*.1) rgba(255,45,35,.5);
-    transition:opacity 1.4s ease,transform 4.8s cubic-bezier(.12,.6,.3,1),box-shadow .3s}
-  #possess .po.open{opacity:var(--o,1);transform:translate(calc(-50% + var(--px,0px)*var(--k,1)),calc(-50% + var(--py,0px)*var(--k,1))) scale(1);animation:populse 2.6s ease-in-out infinite}
-  @keyframes populse{0%,100%{filter:brightness(.85)}50%{filter:brightness(1.5)}}
-  #possess.flare .po{box-shadow:0 0 calc(var(--d)*1.1) calc(var(--d)*.3) rgba(255,40,30,.95);filter:brightness(2);transform:translate(-50%,-50%) scale(1.45);transition:transform .35s ease-out,box-shadow .2s}
+  #possess .pcracks{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;overflow:visible;transition:transform .06s}
+  #possess .pcracks path{fill:none;stroke-linecap:round;stroke-linejoin:round}
+  #possess .pcracks .cc{stroke:#fff1ee;stroke-width:1.7}
+  #possess .pcracks .cg{stroke:#ff2b2b;stroke-width:5;opacity:.3;transition:stroke-width .25s,opacity .25s}
+  #possess .pcracks path.draw{transition:stroke-dashoffset var(--t,.25s) cubic-bezier(.2,.8,.3,1) var(--dl,0s)}
+  #possess .pcracks path.fade{opacity:0;transition:opacity .12s ease var(--dl,0s)}
+  #possess .pcracks path.fade.in{opacity:1}
+  #possess .pcracks path.cg.fade.in{opacity:.34}
+  #possess.hit .pcracks{transform:translate(var(--jx,3px),var(--jy,-2px))}
+  #possess.breath .pcracks .cg{animation:pbreath 1.1s ease-in-out infinite}
+  @keyframes pbreath{0%,100%{opacity:.15;stroke-width:4}50%{opacity:.6;stroke-width:9}}
+  #possess.flare .pcracks .cg{stroke-width:10;opacity:.5}
+  #possess.flare .pcracks .cc{stroke-width:2}
   #possess.stress .pgrain{opacity:.18}
   #possess.stress .pvig{animation:pvig 1.1s ease-in-out infinite}
   @keyframes pvig{0%,100%{transform:scale(1)}50%{transform:scale(1.22)}}
   #possess.stress .pbox{animation:ptrem .1s steps(2) infinite}
   @keyframes ptrem{0%{transform:translateX(-50%)}100%{transform:translate(calc(-50% + 2px),1px)}}
-  #possess.jit .porbs{transform:translate(4px,-3px)}
   #possess.jit .pgrain{opacity:.35}
   main.pshake{animation:pshake .12s steps(2) infinite}
   @keyframes pshake{0%{transform:translate(-5px,2px)}100%{transform:translate(6px,-3px)}}
@@ -94,23 +97,16 @@ function injectCss(){
 function build(){
   if(root)return;
   root=document.createElement('div'); root.id='possess';
-  root.innerHTML=`<div class="pgrain"></div><div class="pvig"></div><div class="pslices"></div><div class="porbs"></div>
+  root.innerHTML=`<div class="pgrain"></div><div class="pvig"></div><div class="pslices"></div><svg class="pcracks" xmlns="http://www.w3.org/2000/svg"></svg>
     <div class="pbox"><div class="pname">???</div><div class="ptext"></div></div>
     <div class="pscream"></div><div class="pflash"></div>
     <button class="pskip" type="button">Passer (Échap)</button>`;
   document.body.appendChild(root);
-  els={orbs:root.querySelector('.porbs'),slices:root.querySelector('.pslices'),box:root.querySelector('.pbox'),name:root.querySelector('.pname'),
+  els={cracks:root.querySelector('.pcracks'),slices:root.querySelector('.pslices'),box:root.querySelector('.pbox'),name:root.querySelector('.pname'),
        text:root.querySelector('.ptext'),scream:root.querySelector('.pscream'),flash:root.querySelector('.pflash'),
        skip:root.querySelector('.pskip')};
   els.skip.addEventListener('click',e=>{e.stopPropagation();skip()});
   root.addEventListener('click',()=>{ if(typing)quick=true; else if(clickWake)clickWake(); });
-  let mmWait=false;
-  root.addEventListener('mousemove',e=>{            /* les boules dérivent doucement vers le curseur */
-    if(reduce||mmWait)return; mmWait=true;
-    requestAnimationFrame(()=>{ mmWait=false;
-      root.style.setProperty('--px',((e.clientX/innerWidth-.5)*7).toFixed(1)+'px');
-      root.style.setProperty('--py',((e.clientY/innerHeight-.5)*5).toFixed(1)+'px'); });
-  });
 }
 
 /* ---------- audio ---------- */
@@ -204,16 +200,8 @@ function flashOnce(){
   els.flash.style.transition='none'; els.flash.style.opacity=1; void els.flash.offsetWidth;
   els.flash.style.transition='opacity .5s ease-out'; els.flash.style.opacity=0;
 }
-/* ----- la tension : battements de cœur qui s'accélèrent, dissonance qui monte, chuchotements ----- */
+/* ----- la tension : dissonance qui monte, chuchotements ----- */
 let stress=null;
-function heart(at){
-  [[0,.4,62],[.17,.27,55]].forEach(([d,v,f])=>{
-    const o=ctx.createOscillator(), g=ctx.createGain();
-    o.type='sine'; o.frequency.setValueAtTime(f*1.6,at+d); o.frequency.exponentialRampToValueAtTime(f*.6,at+d+.12);
-    g.gain.setValueAtTime(v,at+d); g.gain.exponentialRampToValueAtTime(.0001,at+d+.16);
-    o.connect(g); g.connect(master); o.start(at+d); o.stop(at+d+.2);
-  });
-}
 function startStress(){
   if(stress)return;
   stress={on:true,t0:performance.now(),timers:[],nodes:[]};
@@ -228,12 +216,10 @@ function startStress(){
       g.gain.setValueAtTime(.0001,t); g.gain.linearRampToValueAtTime(.045,t+4.5);
       o.connect(g); g.connect(master); o.start(t); l.start(t); stress.nodes.push({o,l,g});
     });
-    const beat=()=>{ if(!stress||!stress.on)return; heart(ctx.currentTime);
-      stress.timers.push(setTimeout(beat,60000/clamp(60+el()*17,60,150))); };
     const whisper=()=>{ if(!stress||!stress.on)return;
       if(buf.chuchote_1)snd('chuchote_1',.5+rnd()*.35,.07+Math.min(.2,el()*.04));
       stress.timers.push(setTimeout(whisper,clamp(1100-el()*130,260,1100)+rnd()*260)); };
-    beat(); stress.timers.push(setTimeout(whisper,500));
+    stress.timers.push(setTimeout(whisper,500));
   }
   if(!reduce){                                                     /* micro-secousses irrégulières */
     const jit=()=>{ if(!stress||!stress.on)return; root.classList.add('jit');
@@ -251,45 +237,106 @@ function stopStress(hard){
   root.classList.remove('stress','jit');
 }
 
-/* ----- les boules de lumière dans la pénombre ----- */
-function makeOrbs(){
-  clearOrbs();
-  const pts=[]; let tries=0;
-  while(pts.length<7&&tries<500){
-    tries++;
-    const x=8+rnd()*84, y=10+rnd()*80;
-    if(x>12&&x<88&&y>62)continue;                                   /* zone du texte dégagée */
-    if(pts.some(p=>Math.hypot(p.x-x,(p.y-y)*.6)<17))continue;
-    pts.push({x,y});
-  }
-  pts.forEach(p=>{
-    const d=24+rnd()*58, o=document.createElement('div'); o.className='po';
-    o.style.left=p.x+'%'; o.style.top=p.y+'%';
-    o.style.setProperty('--d',d.toFixed(0)+'px');
-    o.style.setProperty('--o',(.55+Math.min(.45,d/130)).toFixed(2));
-    o.style.setProperty('--k',(.5+rnd()*1.6).toFixed(2));
-    els.orbs.appendChild(o); orbList.push(o);
-  });
+/* ----- quelque chose cogne de l'autre côté de l'écran ----- */
+const SVGNS='http://www.w3.org/2000/svg';
+let VW=1280, VH=720, U=1, crackTimers=[];
+function sizeCracks(){
+  VW=innerWidth; VH=innerHeight; U=Math.max(VW,VH)/1000;
+  els.cracks.setAttribute('viewBox',`0 0 ${VW} ${VH}`);
 }
-let orbTimers=[], orbList=[];
-function clearOrbs(){ orbTimers.forEach(clearTimeout); orbTimers=[]; orbList=[]; if(els.orbs)els.orbs.innerHTML=''; }
-async function summonOrbs(){
-  makeOrbs();
-  orbList.forEach((o,i)=>orbTimers.push(setTimeout(()=>o.classList.add('open'),200+i*430+rnd()*160)));
-  await W(4200);
+function mkPath(d,L,cls,delay,dur,dash){
+  const p=document.createElementNS(SVGNS,'path'); p.setAttribute('d',d); p.setAttribute('class',cls); els.cracks.appendChild(p);
+  if(dash){
+    p.style.strokeDasharray=L; p.style.strokeDashoffset=reduce?0:L;
+    p.style.setProperty('--t',(reduce?0:dur)+'s'); p.style.setProperty('--dl',delay+'s');
+    if(!reduce){ void p.getBoundingClientRect(); p.classList.add('draw'); requestAnimationFrame(()=>{ p.style.strokeDashoffset=0; }); }
+  }else{
+    p.classList.add('fade'); p.style.setProperty('--dl',delay+'s');
+    if(reduce)p.classList.add('in'); else{ void p.getBoundingClientRect(); requestAnimationFrame(()=>p.classList.add('in')); }
+  }
+  return p;
+}
+function growCrack(x,y,len,angle,depth,delay,dur){
+  const steps=Math.max(2,Math.round(len/(46*U))), pts=[[x,y]], branches=[];
+  let cx=x, cy=y, a=angle;
+  for(let i=1;i<=steps;i++){
+    a+=(rnd()-.5)*.5; const sl=(30+rnd()*34)*U; cx+=Math.cos(a)*sl; cy+=Math.sin(a)*sl; pts.push([cx,cy]);
+    if(depth<2&&rnd()<.14) branches.push({i,x:cx,y:cy,a:a+(rnd()<.5?-1:1)*(.45+rnd()*.5)});
+  }
+  const d='M'+pts.map(q=>q[0].toFixed(0)+' '+q[1].toFixed(0)).join(' L');
+  let L=len*1.6; try{ const tmp=document.createElementNS(SVGNS,'path'); tmp.setAttribute('d',d); els.cracks.appendChild(tmp); L=tmp.getTotalLength(); tmp.remove(); }catch(e){}
+  if(depth<2) mkPath(d,L,'cg',delay,dur,true);          /* halo seulement sur les fissures principales (moins de tracés à dessiner) */
+  mkPath(d,L,'cc',delay,dur,true);
+  branches.forEach(br=>growCrack(br.x,br.y,len*.36,br.a,depth+1,delay+(br.i/steps)*dur,dur*.6));
+}
+/* un impact : des fissures qui rayonnent + des anneaux de verre brisé autour du point de choc */
+function impact(x,y,i,delay,sc){
+  sc=sc||1; const n=5+Math.round(i*3), base=rnd()*Math.PI*2, angs=[];
+  for(let k=0;k<n;k++){
+    const a=base+k*(Math.PI*2/n)+(rnd()-.5)*.6; angs.push(a);
+    growCrack(x,y,sc*U*(60+240*i)*(.5+rnd()*.8),a,1,delay,.26);
+  }
+  let ring='';
+  const r=U*(20+16*i);
+  for(let k=0;k<n;k++){
+    if(rnd()<.3)continue;
+    const a0=angs[k], a1=angs[(k+1)%n]+(k===n-1?Math.PI*2:0), rr=r*(1+(rnd()<.4?1.1:0));
+    for(let s=0;s<=3;s++){ const a=a0+(a1-a0)*s/3, q=rr*(.82+rnd()*.36); ring+=(s?' L':' M')+(x+Math.cos(a)*q).toFixed(0)+' '+(y+Math.sin(a)*q).toFixed(0); }
+  }
+  if(ring) mkPath(ring,0,'cc',delay+.08,0,false);
+  mkPath('M'+(x-1.5)+' '+y+' L'+(x+1.5)+' '+y,0,'cc',delay,0,false);   /* le point d'impact */
+}
+function clearCracks(){ crackTimers.forEach(clearTimeout); crackTimers=[]; if(els.cracks)els.cracks.innerHTML=''; }
+function softFlash(op){
+  if(reduce)return;
+  els.flash.style.transition='none'; els.flash.style.opacity=op; void els.flash.offsetWidth;
+  els.flash.style.transition='opacity .28s ease-out'; els.flash.style.opacity=0;
+}
+function pound(i){                                            /* un coup, de plus en plus fort */
+  if(ctx){ const t=ctx.currentTime, v=.22+.6*i;
+    const o=ctx.createOscillator(), g=ctx.createGain();
+    o.type='sine'; o.frequency.setValueAtTime(105,t); o.frequency.exponentialRampToValueAtTime(38,t+.22);
+    g.gain.setValueAtTime(v,t); g.gain.exponentialRampToValueAtTime(.0001,t+.3);
+    o.connect(g); g.connect(master); o.start(t); o.stop(t+.34);
+    const n=Math.floor(ctx.sampleRate*.12), nb=ctx.createBuffer(1,n,ctx.sampleRate), d=nb.getChannelData(0);
+    for(let k=0;k<n;k++) d[k]=(Math.random()*2-1)*Math.pow(1-k/n,2);
+    const s=ctx.createBufferSource(); s.buffer=nb; const lp=ctx.createBiquadFilter(); lp.type='lowpass'; lp.frequency.value=700;
+    const ng=ctx.createGain(); ng.gain.value=.25+.5*i; s.connect(lp); lp.connect(ng); ng.connect(master); s.start(t);
+    noiseBurst(t+.02,.05,3500,.14+.3*i);                      /* le craquement du verre */
+  }
+  if(!reduce){
+    root.style.setProperty('--jx',((rnd()<.5?-1:1)*(2+6*i)).toFixed(1)+'px'); root.style.setProperty('--jy',((rnd()<.5?-1:1)*(1+4*i)).toFixed(1)+'px');
+    root.classList.add('hit'); setTimeout(()=>root.classList.remove('hit'),110);
+    softFlash(.05+.09*i);
+  }
+}
+async function summonPounding(){
+  sizeCracks(); clearCracks();
+  const hits=[0,1100,2000,2750,3350,3850,4250];                   /* de plus en plus rapprochés */
+  hits.forEach((ms,k)=>crackTimers.push(setTimeout(()=>{
+    const i=(k+1)/hits.length, rr=.46-.3*i;                        /* les impacts se rapprochent du centre */
+    const ang0=rnd()*Math.PI*2, x=VW/2+Math.cos(ang0)*VW*rr, y=VH/2+Math.sin(ang0)*VH*rr;
+    pound(i);
+    impact(x,y,i,0);
+  },ms)));
+  await W(4700);
 }
 async function doScream(){
   screamed=true;
   els.box.classList.remove('show');
-  stopStress(true);                                 /* le son se coupe net : silence, et les boules nous fixent */
+  stopStress(true);                                 /* le son se coupe net : silence, les fissures pulsent */
+  root.classList.add('breath');
   await W(1000);
+  root.classList.remove('breath');
   els.scream.innerHTML="CE N'EST PAS ENCORE PRÊT,<br>SORS D'ICI !"; els.scream.classList.add('on');
   root.classList.add('flare'); flashOnce();
+  for(let k=0;k<5;k++)                               /* la vitre éclate (en haut et en bas, bien répartis : le texte reste lisible) */
+    impact(VW*(.08+.84*(k+.5)/5+(rnd()-.5)*.06),VH*(k%2?.74+rnd()*.2:.06+rnd()*.2),1,rnd()*.12,.8);
   if(!reduce)document.querySelector('main')?.classList.add('pshake');
-  snd('cri_1',.85,.95); snd('cri_1',.62,.7); noiseBurst(ctx?ctx.currentTime:0,.25,600,.5);
+  snd('cri_1',.85,.95); snd('cri_1',.62,.7); noiseBurst(ctx?ctx.currentTime:0,.3,500,.6); if(ctx)pound(1);
   await W(2100);
   els.scream.classList.remove('on'); document.querySelector('main')?.classList.remove('pshake');
-  root.classList.remove('flare'); clearOrbs();
+  root.classList.remove('flare'); clearCracks();
   await W(1500);
 }
 
@@ -343,14 +390,14 @@ async function run(w){
       await W(700);
       startStress();                                  /* ils réalisent qu'on les écoute : l'ambiance devient pesante */
       await say('…Tu nous écoutes ?','calme',{hold:500});
-      await summonOrbs();
+      await summonPounding();
       await doScream();
     }
   }catch(e){ if(e!==ABORT)console.error(e); }
   finally{ cleanup(); }
 }
 function cleanup(){
-  glitchStop(); clearInterval(glitchTimer); stopStress(true); clearOrbs();
+  glitchStop(); clearInterval(glitchTimer); stopStress(true); clearCracks();
   root.classList.remove('flare');
   try{ footsteps&&footsteps.s.stop(); }catch(e){} footsteps=null;
   document.removeEventListener('keydown',onKey,true);
